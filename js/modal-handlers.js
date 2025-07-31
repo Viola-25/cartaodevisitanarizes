@@ -69,8 +69,8 @@ customModalCancelBtn.onclick = () => {
 
 export function adicionarBloco(bloco = { tipo: 'texto', titulo: '', conteudo: '' }) {
     const div = document.createElement('div');
-    // Usando a classe section-box para os blocos de conteúdo no modal
-    div.className = 'section-box relative space-y-4';
+    // Usando a classe card-container para os blocos de conteúdo no modal
+    div.className = 'card-container relative space-y-4';
     div.innerHTML = `
         <button type="button" onclick="window.adicionarBloco.removeBlock(this)" class="absolute -top-3 -right-3 text-white bg-red-500 hover:bg-red-600 w-8 h-8 rounded-full flex items-center justify-center shadow-md text-xl font-bold">&times;</button>
         <div>
@@ -103,7 +103,7 @@ export function openModalForNew() {
     modalForm.removeAttribute('data-clown-id');
     modalForm.removeAttribute('data-foto-path');
     blocosContainer.innerHTML = '';
-    fotoPreview.src = 'https://placehold.co/200x200/fcd34d/842d00?text=Foto';
+    fotoPreview.src = 'https://placehold.co/200x200/e9ecef/495057?text=Foto';
     modalTitle.innerText = 'Adicionar Novo Palhaço';
     modal.classList.remove('hidden');
     modal.querySelector('div').classList.add('scale-100');
