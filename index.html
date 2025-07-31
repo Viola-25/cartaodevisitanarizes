@@ -254,13 +254,24 @@
         };
 
         window.handleCopyLink = (id) => {
-            const link = `${window.location.origin}${window.location.pathname}#/palhaco/${id}`;
-            navigator.clipboard.writeText(link).then(() => {
+            // Pega a URL atual e remove qualquer hash (#) existente.
+            const baseUrl = window.location.href.split('#')[0];
+            // Constrói o novo link corretamente.
+            const link = `${baseUrl}#/palhaco/${id}`;
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = link;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
                 alert('Link copiado para a área de transferência!');
-            }).catch(err => {
+            } catch (err) {
                 console.error('Falha ao copiar:', err);
                 alert('Não foi possível copiar o link.');
-            });
+            }
+            document.body.removeChild(textArea);
         };
 
         // --- Roteador Simples ---
