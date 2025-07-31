@@ -11,10 +11,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilos base */
+        /* Estilos base para o corpo e fontes */
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #fefce8 0%, #fff7ed 100%); /* Amarelo claro suave para um toque alegre */
+            background: linear-gradient(135deg, #f0f9ff 0%, #fefce8 100%); /* Gradiente suave de azul claro para amarelo pastel */
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -24,19 +24,43 @@
         }
         .font-comfortaa { font-family: 'Comfortaa', cursive; }
 
-        /* Estilos de componentes */
-        .box-container { @apply bg-white rounded-3xl shadow-xl p-8 transition-all duration-300 transform hover:scale-[1.01] border border-yellow-100; }
-        .card-clown { @apply bg-white rounded-3xl shadow-lg overflow-hidden transition-all duration-300 transform hover:scale-[1.02] border border-yellow-100; }
-        .form-input { @apply w-full p-3 border border-yellow-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-200 bg-white shadow-sm text-gray-800; }
-        .btn { @apply py-3 px-6 text-base font-semibold rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center; }
-        .btn-primary { @apply btn bg-yellow-500 text-white hover:bg-yellow-600 disabled:bg-yellow-300 disabled:cursor-not-allowed; }
-        .btn-secondary { @apply btn bg-gray-200 text-gray-700 hover:bg-gray-300; }
-        .icon-btn { @apply p-2 rounded-full hover:bg-gray-100 transition-colors; }
-        .label { @apply block text-sm font-medium text-gray-700 mb-1; }
-        .modal-container { @apply fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300; }
-        .modal-content { @apply bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95; }
-        .fieldset-clown { @apply border border-yellow-200 rounded-2xl p-6 bg-yellow-50/50 backdrop-blur-sm; }
-        .legend-clown { @apply text-xl font-bold text-yellow-700 px-3 font-comfortaa; }
+        /* Estilos de componentes reutilizáveis */
+        .card-base { /* Usado para contêineres principais como o cartão do palhaço e modais */
+            @apply bg-white rounded-3xl shadow-xl p-8 transition-all duration-300 transform hover:scale-[1.01] border border-blue-100;
+        }
+        .section-box { /* Usado para seções internas dentro dos cartões */
+            @apply bg-white rounded-2xl shadow-sm p-6 border border-blue-50;
+        }
+        .form-input { /* Estilo para campos de formulário */
+            @apply w-full p-3 border border-blue-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 bg-white text-gray-800;
+        }
+        .btn { /* Estilo base para botões */
+            @apply py-3 px-6 text-base font-semibold rounded-full shadow-md transition-all duration-300 transform hover:scale-105 flex items-center justify-center;
+        }
+        .btn-primary { /* Botão principal */
+            @apply btn bg-orange-500 text-white hover:bg-orange-600 disabled:bg-orange-300 disabled:cursor-not-allowed;
+        }
+        .btn-secondary { /* Botão secundário */
+            @apply btn bg-gray-200 text-gray-700 hover:bg-gray-300;
+        }
+        .icon-btn { /* Botões de ícone */
+            @apply p-2 rounded-full hover:bg-gray-100 transition-colors;
+        }
+        .label { /* Estilo para rótulos de formulário */
+            @apply block text-sm font-medium text-gray-700 mb-1;
+        }
+        .modal-container { /* Contêiner para todos os modais */
+            @apply fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 transition-opacity duration-300;
+        }
+        .modal-content { /* Conteúdo interno dos modais */
+            @apply bg-white rounded-3xl shadow-2xl p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto transform transition-all duration-300 scale-95;
+        }
+        .fieldset-clown { /* Fieldset temático */
+            @apply border border-orange-200 rounded-2xl p-6 bg-orange-50/50 backdrop-blur-sm;
+        }
+        .legend-clown { /* Legenda do fieldset temático */
+            @apply text-xl font-bold text-orange-700 px-3 font-comfortaa;
+        }
     </style>
 </head>
 <body>
@@ -47,7 +71,7 @@
     <!-- Modal para adicionar/editar palhaços -->
     <div id="modal" class="modal-container hidden">
         <div class="modal-content">
-            <h2 id="modal-title" class="text-4xl font-bold mb-8 text-yellow-700 font-comfortaa text-center"></h2>
+            <h2 id="modal-title" class="text-4xl font-bold mb-8 text-orange-700 font-comfortaa text-center"></h2>
             <form id="modal-form" class="space-y-8">
                 <!-- Seção de Dados do Palhaço -->
                 <fieldset class="fieldset-clown">
@@ -56,8 +80,8 @@
                         <div class="md:col-span-2 flex flex-col items-center">
                             <label for="foto" class="label text-lg mb-3">Foto de Perfil</label>
                             <div class="flex flex-col items-center space-y-4">
-                                <img id="foto-preview" src="https://placehold.co/200x200/ffe082/c53030?text=Foto" class="w-36 h-36 rounded-full object-cover shadow-xl ring-4 ring-yellow-300 border-2 border-white"/>
-                                <input type="file" id="foto" accept="image/*" class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-yellow-100 file:text-yellow-700 hover:file:bg-yellow-200 cursor-pointer"/>
+                                <img id="foto-preview" src="https://placehold.co/200x200/fcd34d/842d00?text=Foto" class="w-36 h-36 rounded-full object-cover shadow-xl ring-4 ring-orange-300 border-2 border-white"/>
+                                <input type="file" id="foto" accept="image/*" class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:font-semibold file:bg-orange-100 file:text-orange-700 hover:file:bg-orange-200 cursor-pointer"/>
                             </div>
                         </div>
                         <div>

@@ -9,7 +9,7 @@ const appContainer = document.getElementById('app-container');
 
 // --- Ícones SVG ---
 const icons = {
-    clownNose: `<svg class="w-28 h-28 text-yellow-500 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2Zm0,18c-4.41,0-8-3.59-8-8s3.59-8,8-8,8,3.59,8,8-3.59,8-8,8Z" /><path d="M12,6c-3.31,0-6,2.69-6,6s2.69,6,6,6,6-2.69,6-6-2.69-6-6-6Z" /></svg>`,
+    clownNose: `<svg class="w-32 h-32 text-orange-500 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,2C6.48,2,2,6.48,2,12s4.48,10,10,10,10-4.48,10-10S17.52,2,12,2Zm0,18c-4.41,0-8-3.59-8-8s3.59-8,8-8,8,3.59,8,8-3.59,8-8,8Z" /><path d="M12,6c-3.31,0-6,2.69-6,6s2.69,6,6,6,6-2.69,6-6-2.69-6-6-6Z" /></svg>`,
     copy: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`,
     edit: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L15.232 5.232z"></path></svg>`,
     trash: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`,
@@ -20,7 +20,7 @@ const icons = {
 export function renderLoading(text = 'Carregando...') {
     appContainer.innerHTML = `
         <div class="flex flex-col justify-center items-center h-screen">
-            <div class="animate-spin rounded-full h-32 w-32 border-b-4 border-yellow-500"></div>
+            <div class="animate-spin rounded-full h-32 w-32 border-b-4 border-orange-500"></div>
             <p class="mt-4 text-lg text-gray-600">${text}</p>
         </div>
     `;
@@ -32,7 +32,7 @@ export function renderHomePage() {
             ${icons.clownNose}
             <h1 class="text-6xl font-bold text-gray-800 mt-6 font-comfortaa leading-tight">Cartões de Visita dos Palhaços</h1>
             <p class="text-xl text-gray-600 mt-4 max-w-lg">Conheça os voluntários que espalham alegria e transformam vidas!</p>
-            <div class="mt-12 box-container max-w-md">
+            <div class="mt-12 card-base max-w-md">
                 <h2 class="text-2xl font-semibold text-gray-800 font-comfortaa mb-4">Acesso para Coordenadores</h2>
                 <a href="#admin" class="btn-primary inline-block">Gerenciar Cartões</a>
             </div>
@@ -50,21 +50,21 @@ export async function renderClownCard(clownId) {
             const data = docSnap.data();
             const blocosHtml = (data.blocos || []).map(bloco => {
                 if (bloco.tipo === 'link') {
-                    return `<div class="p-4 bg-blue-50 rounded-xl shadow-sm border border-blue-100">
+                    return `<div class="section-box">
                                 <a href="${bloco.conteudo}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-500 text-white font-bold py-3 px-4 rounded-full hover:bg-blue-600 transition-all shadow-md text-lg">${bloco.titulo}</a>
                             </div>`;
                 }
                 if (bloco.tipo === 'video') {
                     const videoId = bloco.conteudo.split('v=')[1]?.split('&')[0] || bloco.conteudo.split('/').pop();
                     return `
-                        <div class="p-4 bg-red-50 rounded-xl shadow-sm border border-red-100">
+                        <div class="section-box">
                             <h3 class="font-bold text-xl mb-3 text-gray-800">${bloco.titulo}</h3>
                             <div class="relative pt-[56.25%]"> <!-- 16:9 Aspect Ratio -->
                                 <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"></iframe>
                             </div>
                         </div>`;
                 }
-                return `<div class="p-5 bg-yellow-50 rounded-xl shadow-sm border border-yellow-100">
+                return `<div class="section-box">
                             <h3 class="font-bold text-xl text-gray-900 mb-2">${bloco.titulo}</h3>
                             <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">${bloco.conteudo}</p>
                         </div>`;
@@ -72,17 +72,17 @@ export async function renderClownCard(clownId) {
 
             appContainer.innerHTML = `
                 <div class="min-h-screen flex items-center justify-center p-4">
-                    <div class="w-full max-w-xl card-clown my-8">
-                        <div class="h-64 bg-cover bg-center relative" style="background-image: url('${data.fotoUrl || 'https://placehold.co/600x300/ffe082/c53030?text=Foto+de+Capa'}')">
-                            <div class="absolute inset-0 bg-gradient-to-t from-yellow-500/40 to-transparent"></div>
+                    <div class="w-full max-w-xl card-base my-8">
+                        <div class="h-64 bg-cover bg-center relative" style="background-image: url('${data.fotoUrl || 'https://placehold.co/600x300/fcd34d/842d00?text=Foto+de+Capa'}')">
+                            <div class="absolute inset-0 bg-gradient-to-t from-orange-500/40 to-transparent"></div>
                         </div>
                         <div class="p-8 text-center -mt-24 relative z-10">
-                            <img src="${data.fotoUrl || 'https://placehold.co/200x200/ffe082/c53030?text=?'}" alt="Foto de ${data.nomePalhaco}" class="w-40 h-40 rounded-full object-cover mx-auto ring-8 ring-white shadow-xl border-4 border-yellow-300">
-                            <div class="box-container p-6 mt-6">
+                            <img src="${data.fotoUrl || 'https://placehold.co/200x200/fcd34d/842d00?text=?'}" alt="Foto de ${data.nomePalhaco}" class="w-40 h-40 rounded-full object-cover mx-auto ring-8 ring-white shadow-xl border-4 border-orange-300">
+                            <div class="section-box p-6 mt-6">
                                 <h1 class="text-5xl font-bold text-gray-800 font-comfortaa leading-tight">${data.nomePalhaco}</h1>
-                                <p class="text-xl text-yellow-600 font-semibold mt-2">${data.profissao}</p>
+                                <p class="text-xl text-orange-600 font-semibold mt-2">${data.profissao}</p>
                             </div>
-                            <div class="box-container p-6 mt-8 text-left">
+                            <div class="section-box p-6 mt-8 text-left">
                                 <h2 class="text-2xl font-bold text-gray-800 mb-4 font-comfortaa">Sobre Mim</h2>
                                 <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">${data.bio}</p>
                             </div>
@@ -100,8 +100,8 @@ export async function renderClownCard(clownId) {
             `;
         } else {
             appContainer.innerHTML = `
-                <div class="text-center p-8 box-container my-8 max-w-md">
-                    <h2 class="text-3xl font-bold text-yellow-600 mb-4">Oops! Palhaço não encontrado.</h2>
+                <div class="text-center p-8 card-base my-8 max-w-md">
+                    <h2 class="text-3xl font-bold text-orange-600 mb-4">Oops! Palhaço não encontrado.</h2>
                     <p class="text-lg text-gray-700">Parece que este cartão de visita não existe ou foi removido.</p>
                     <a href="#" class="mt-6 inline-block btn-primary">Voltar para a Página Inicial</a>
                 </div>
@@ -121,14 +121,14 @@ export function renderAdminPanel() {
     onSnapshot(clownsCollectionRef, (snapshot) => {
         const clownsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         const clownsHtml = clownsList.map(clown => `
-            <div class="card-clown flex flex-col">
-                <div class="h-40 bg-cover bg-center relative" style="background-image: url('${clown.fotoUrl || 'https://placehold.co/600x300/ffe082/c53030?text=Sem+Foto'}')">
-                    <div class="absolute inset-0 bg-gradient-to-t from-yellow-500/20 to-transparent"></div>
+            <div class="card-base flex flex-col">
+                <div class="h-40 bg-cover bg-center relative" style="background-image: url('${clown.fotoUrl || 'https://placehold.co/600x300/fcd34d/842d00?text=Sem+Foto'}')">
+                    <div class="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent"></div>
                 </div>
                 <div class="p-6 flex-grow relative -mt-16">
-                    <img src="${clown.fotoUrl || 'https://placehold.co/100x100/ffe082/c53030?text=?'}" class="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-white shadow-lg border-2 border-yellow-200">
+                    <img src="${clown.fotoUrl || 'https://placehold.co/100x100/fcd34d/842d00?text=?'}" class="w-28 h-28 rounded-full object-cover mx-auto ring-4 ring-white shadow-lg border-2 border-orange-300">
                     <h2 class="text-3xl font-bold text-gray-800 text-center mt-3 font-comfortaa">${clown.nomePalhaco}</h2>
-                    <p class="text-md text-yellow-600 font-semibold text-center">${clown.profissao}</p>
+                    <p class="text-md text-orange-600 font-semibold text-center">${clown.profissao}</p>
                 </div>
                 <div class="bg-gray-50 p-4 flex justify-center items-center space-x-3 border-t border-gray-100">
                     <button onclick="window.handleCopyLink('${clown.id}')" title="Copiar Link" class="icon-btn text-gray-500 hover:text-blue-600">
@@ -149,14 +149,14 @@ export function renderAdminPanel() {
 
         appContainer.innerHTML = `
             <div class="container mx-auto p-4 sm:p-6 lg:p-8 w-full max-w-6xl">
-                <header class="flex flex-col sm:flex-row justify-between items-center mb-12 pb-8 border-b-2 border-yellow-200">
+                <header class="flex flex-col sm:flex-row justify-between items-center mb-12 pb-8 border-b-2 border-orange-200">
                     <h1 class="text-5xl font-bold text-gray-800 font-comfortaa mb-6 sm:mb-0">Painel de Palhaços</h1>
                     <button onclick="window.openModalForNew()" class="btn-primary px-8 py-4">
                         ${icons.add} Adicionar Novo Palhaço
                     </button>
                 </header>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">${clownsHtml}</div>
-                ${clownsList.length === 0 ? `<div class="text-center text-gray-600 text-lg mt-10 p-4 box-container">Nenhum palhaço cadastrado ainda. Que tal adicionar o primeiro e espalhar mais alegria?</div>` : ''}
+                ${clownsList.length === 0 ? `<div class="text-center text-gray-600 text-lg mt-10 p-4 card-base">Nenhum palhaço cadastrado ainda. Que tal adicionar o primeiro e espalhar mais alegria?</div>` : ''}
             </div>
         `;
     }, (error) => {
