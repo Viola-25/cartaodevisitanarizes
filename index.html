@@ -11,10 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Balsamiq+Sans:wght@700&display=swap" rel="stylesheet">
     <style>
-        /* Estilo customizado para a fonte */
-        .font-balsamiq {
-            font-family: 'Balsamiq Sans', cursive;
-        }
+        /* Estilo customizado para a fonte e animações */
+        .font-balsamiq { font-family: 'Balsamiq Sans', cursive; }
+        .form-input { @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-shadow; }
+        .btn-primary { @apply py-2 px-6 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md; }
+        .btn-secondary { @apply py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -22,25 +23,34 @@
     <!-- O conteúdo do nosso aplicativo será renderizado aqui -->
     <div id="app-container"></div>
 
-    <!-- Modal para adicionar/editar palhaços (inicialmente escondido) -->
+    <!-- Modal para adicionar/editar palhaços -->
     <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
+        <div class="bg-white rounded-lg shadow-2xl p-6 sm:p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 id="modal-title" class="text-2xl font-bold mb-6"></h2>
             <form id="modal-form">
-                <div class="space-y-4">
-                    <input type="hidden" id="clown-id">
-                    <input type="text" id="nomePalhaco" placeholder="Nome do Palhaço" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required />
-                    <input type="text" id="nomeReal" placeholder="Nome Real do Voluntário" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required />
-                    <input type="text" id="frase" placeholder="Frase de Efeito" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required />
-                    <input type="url" id="instagramProjeto" placeholder="Link do Instagram do Projeto" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent" required />
+                <div class="space-y-6">
+                    <!-- Campos Principais -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Cor de fundo do cartão</label>
-                        <input type="color" id="corFundo" class="w-full h-10 p-1 border border-gray-300 rounded-lg" />
+                        <label for="foto" class="block text-sm font-medium text-gray-700">Foto do Palhaço</label>
+                        <input type="file" id="foto" accept="image/*" class="form-input mt-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"/>
+                        <img id="foto-preview" src="" class="hidden mt-4 w-32 h-32 rounded-full object-cover mx-auto"/>
+                    </div>
+                    <input type="text" id="nomePalhaco" placeholder="Nome do Palhaço" class="form-input" required />
+                    <input type="text" id="profissao" placeholder="Profissão do Palhaço (Ex: Mágico, Músico)" class="form-input" required />
+                    <textarea id="bio" placeholder="Escreva uma bio divertida..." class="form-input" rows="4"></textarea>
+                    
+                    <!-- Blocos Personalizáveis -->
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-gray-800">Blocos Personalizáveis</h3>
+                        <div id="blocos-container" class="mt-4 space-y-4">
+                            <!-- Novos blocos serão adicionados aqui -->
+                        </div>
+                        <button type="button" onclick="adicionarBloco()" class="mt-4 btn-secondary">Adicionar Bloco</button>
                     </div>
                 </div>
                 <div class="mt-8 flex justify-end space-x-4">
-                    <button type="button" onclick="closeModal()" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
-                    <button type="submit" class="py-2 px-6 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors shadow-md">Salvar</button>
+                    <button type="button" onclick="closeModal()" class="btn-secondary">Cancelar</button>
+                    <button type="submit" id="save-button" class="btn-primary">Salvar</button>
                 </div>
             </form>
         </div>
@@ -48,238 +58,240 @@
 
     <!-- Firebase e nosso código JavaScript -->
     <script type="module">
-        // Importando as funções do Firebase diretamente da CDN
+        // Importando as funções do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-storage.js";
 
         // --- Configuração do Firebase ---
-        // Suas chaves do Firebase foram inseridas aqui.
         const firebaseConfig = {
             apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
             authDomain: "cartoes-palhacos-app.firebaseapp.com",
             projectId: "cartoes-palhacos-app",
-            storageBucket: "cartoes-palhacos-app.firebasestorage.app",
+            storageBucket: "cartoes-palhacos-app.appspot.com", // Verifique se o final é appspot.com
             messagingSenderId: "455690604804",
             appId: "1:455690604804:web:0b5a909a5ee2dec9e50051"
         };
 
-        // Pega o ID do app, que será o mesmo do seu projeto no Firebase
-        const appId = firebaseConfig.projectId || 'default-app-id';
-
-        // Inicializa o Firebase
+        // Inicializa os serviços do Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const storage = getStorage(app); // Inicializa o Storage
+        const appId = firebaseConfig.projectId;
 
-        // Autenticação anônima para proteger a escrita no banco de dados
+        // Autenticação anônima
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                await signInAnonymously(auth);
-            }
-            // Inicia o roteamento após garantir a autenticação
+            if (!user) await signInAnonymously(auth);
             router();
         });
 
         const appContainer = document.getElementById('app-container');
 
-        // --- Funções para renderizar as páginas ---
+        // --- Funções de Renderização ---
 
-        function renderLoading() {
-            appContainer.innerHTML = `<div class="flex justify-center items-center h-screen"><div class="animate-spin rounded-full h-32 w-32 border-b-4 border-red-500"></div></div>`;
-        }
-
-        function renderHomePage() {
-            document.body.style.backgroundColor = ''; // Reseta a cor de fundo
-            appContainer.innerHTML = `
-                <div class="flex flex-col justify-center items-center h-screen text-center p-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
-                    <h1 class="text-4xl font-bold text-gray-800 mt-4 font-balsamiq">Cartões de Visita dos Palhaços</h1>
-                    <p class="text-xl text-gray-600 mt-2">Um jeito divertido de conhecer nossos voluntários!</p>
-                    <div class="mt-8 p-6 bg-white rounded-lg shadow-md">
-                        <h2 class="text-lg font-semibold">Você é um coordenador?</h2>
-                        <a href="#admin" class="mt-2 inline-block text-blue-600 hover:text-blue-800 hover:underline">Acesse o painel de administração aqui.</a>
-                    </div>
-                </div>
-            `;
+        function renderLoading(text = 'Carregando...') {
+            appContainer.innerHTML = `<div class="flex flex-col justify-center items-center h-screen"><div class="animate-spin rounded-full h-32 w-32 border-b-4 border-red-500"></div><p class="mt-4 text-lg text-gray-600">${text}</p></div>`;
         }
 
         async function renderClownCard(clownId) {
             renderLoading();
-            try {
-                const docRef = doc(db, `artifacts/${appId}/public/data/clowns`, clownId);
-                const docSnap = await getDoc(docRef);
+            const docRef = doc(db, `artifacts/${appId}/public/data/clowns`, clownId);
+            const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.body.style.backgroundColor = data.corFundo || '#fef3c7';
-                    appContainer.innerHTML = `
-                        <div class="min-h-screen flex items-center justify-center p-4">
-                            <div class="w-full max-w-sm bg-white rounded-2xl shadow-2xl transform hover:scale-105 transition-transform duration-300 overflow-hidden">
-                                <div class="p-8 text-center">
-                                     <div class="relative inline-block">
-                                       <div class="w-32 h-32 rounded-full mx-auto bg-red-200 flex items-center justify-center mb-4 ring-4 ring-white ring-offset-4 ring-offset-red-200">
-                                           <span class="text-6xl font-bold text-red-600">?</span>
-                                       </div>
-                                    </div>
-                                    <h1 class="text-4xl font-bold text-gray-800 font-balsamiq">${data.nomePalhaco}</h1>
-                                    <p class="text-lg text-gray-600 mt-2">"${data.frase}"</p>
-                                    <p class="text-sm text-gray-500 mt-4">Também conhecido(a) como ${data.nomeReal}</p>
-                                    <div class="mt-8">
-                                        <a href="${data.instagramProjeto}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg">
-                                            Conheça nosso projeto
-                                        </a>
-                                    </div>
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const blocosHtml = (data.blocos || []).map(bloco => {
+                    if (bloco.tipo === 'link') {
+                        return `<a href="${bloco.conteudo}" target="_blank" rel="noopener noreferrer" class="block w-full text-center bg-blue-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-600 transition-all">${bloco.titulo}</a>`;
+                    }
+                    if (bloco.tipo === 'video') {
+                        const videoId = bloco.conteudo.split('v=')[1]?.split('&')[0] || bloco.conteudo.split('/').pop();
+                        return `
+                            <div class="mt-4">
+                                <h3 class="font-semibold text-lg mb-2">${bloco.titulo}</h3>
+                                <div class="aspect-w-16 aspect-h-9">
+                                    <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="rounded-lg shadow-md"></iframe>
                                 </div>
+                            </div>`;
+                    }
+                    return `<div class="text-left"><h3 class="font-semibold text-lg">${bloco.titulo}</h3><p class="text-gray-700">${bloco.conteudo}</p></div>`;
+                }).join('');
+
+                appContainer.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center p-4 bg-gray-200">
+                        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden my-8">
+                            <img src="${data.fotoUrl || 'https://placehold.co/600x400/fecaca/c53030?text=Foto'}" alt="Foto de ${data.nomePalhaco}" class="w-full h-56 object-cover">
+                            <div class="p-6 text-center">
+                                <h1 class="text-4xl font-bold text-gray-800 font-balsamiq">${data.nomePalhaco}</h1>
+                                <p class="text-md text-red-600 font-semibold mt-1">${data.profissao}</p>
+                                <p class="text-gray-700 my-4 text-left">${data.bio}</p>
+                                <div class="space-y-4 mt-6">${blocosHtml}</div>
+                                <a href="https://www.instagram.com/narizesdeplantao_/" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-full text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all duration-300 shadow-lg">
+                                    Nosso Instagram
+                                </a>
                             </div>
                         </div>
-                    `;
-                } else {
-                    appContainer.innerHTML = `<div class="text-center p-4"><h2>Oops! Palhaço não encontrado.</h2></div>`;
-                }
-            } catch (error) {
-                console.error("Erro ao buscar palhaço:", error);
-                appContainer.innerHTML = `<div class="text-center p-4"><h2>Ocorreu um erro ao carregar.</h2></div>`;
+                    </div>
+                `;
+            } else {
+                appContainer.innerHTML = `<div class="text-center p-4"><h2>Oops! Palhaço não encontrado.</h2></div>`;
             }
         }
         
         function renderAdminPanel() {
-            document.body.style.backgroundColor = ''; // Reseta a cor de fundo
             renderLoading();
             const clownsCollectionRef = collection(db, `artifacts/${appId}/public/data/clowns`);
-            
             onSnapshot(clownsCollectionRef, (snapshot) => {
                 const clownsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
                 const clownsHtml = clownsList.map(clown => `
-                    <div class="bg-white rounded-xl shadow-lg overflow-hidden transition-shadow hover:shadow-2xl">
-                        <div class="p-5">
-                            <div class="flex items-center mb-4">
-                                <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${clown.corFundo};"></div>
+                    <div class="bg-white rounded-xl shadow-lg p-5 flex flex-col justify-between">
+                        <div class="flex items-start">
+                            <img src="${clown.fotoUrl || 'https://placehold.co/100/fecaca/c53030?text=?'}" class="w-16 h-16 rounded-full object-cover mr-4">
+                            <div>
                                 <h2 class="text-2xl font-bold text-gray-800">${clown.nomePalhaco}</h2>
+                                <p class="text-sm text-gray-500">${clown.profissao}</p>
                             </div>
-                            <p class="text-gray-600">"${clown.frase}"</p>
-                            <p class="text-sm text-gray-500 mt-2">Por: ${clown.nomeReal}</p>
-                            <div class="mt-4 pt-4 border-t border-gray-200 flex flex-col space-y-3">
-                                <button onclick="handleCopyLink('${clown.id}')" class="flex items-center justify-center w-full text-sm text-blue-600 hover:text-blue-800 font-semibold bg-blue-100 hover:bg-blue-200 py-2 px-3 rounded-md transition-colors">Copiar Link</button>
-                                <div class="flex space-x-3">
-                                    <button onclick='openModalForEdit(${JSON.stringify(clown).replace(/'/g, "&apos;")})' class="flex items-center justify-center w-full text-sm text-green-600 hover:text-green-800 font-semibold bg-green-100 hover:bg-green-200 py-2 px-3 rounded-md transition-colors">Editar</button>
-                                    <button onclick="handleDelete('${clown.id}')" class="flex items-center justify-center w-full text-sm text-red-600 hover:text-red-800 font-semibold bg-red-100 hover:bg-red-200 py-2 px-3 rounded-md transition-colors">Apagar</button>
-                                </div>
-                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t flex space-x-3">
+                            <button onclick='openModalForEdit(${JSON.stringify(clown).replace(/'/g, "&apos;")})' class="flex-1 btn-secondary">Editar</button>
+                            <button onclick="handleDelete('${clown.id}', '${clown.fotoPath || ''}')" class="flex-1 btn-secondary bg-red-100 text-red-700 hover:bg-red-200">Apagar</button>
                         </div>
                     </div>
                 `).join('');
 
                 appContainer.innerHTML = `
                     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-                        <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b-2 border-gray-200">
-                            <div>
-                                <h1 class="text-4xl font-bold text-gray-800 flex items-center">Painel do Coordenador</h1>
-                                <p class="text-lg text-gray-600 mt-1">Gerencie os cartões de visita dos palhaços.</p>
-                            </div>
-                            <button onclick="openModalForNew()" class="mt-4 sm:mt-0 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
-                                Adicionar Palhaço
-                            </button>
+                        <header class="flex justify-between items-center mb-8">
+                            <h1 class="text-4xl font-bold text-gray-800">Painel do Coordenador</h1>
+                            <button onclick="openModalForNew()" class="btn-primary">Adicionar Palhaço</button>
                         </header>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            ${clownsHtml}
-                        </div>
-                        ${clownsList.length === 0 ? '<div class="text-center py-16 px-6 bg-white rounded-lg shadow-md"><h3 class="mt-4 text-2xl font-semibold text-gray-800">Nenhum palhaço cadastrado ainda!</h3></div>' : ''}
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${clownsHtml}</div>
                     </div>
                 `;
             });
         }
 
-        // --- Funções de Lógica (Modal, Salvar, Deletar) ---
-        
+        window.adicionarBloco = (bloco = { tipo: 'texto', titulo: '', conteudo: '' }) => {
+            const container = document.getElementById('blocos-container');
+            const div = document.createElement('div');
+            div.className = 'p-4 border rounded-lg bg-gray-50 relative';
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-gray-400 hover:text-red-500">&times;</button>
+                <select class="bloco-tipo form-input mb-2">
+                    <option value="texto" ${bloco.tipo === 'texto' ? 'selected' : ''}>Texto Simples</option>
+                    <option value="link" ${bloco.tipo === 'link' ? 'selected' : ''}>Botão de Link</option>
+                    <option value="video" ${bloco.tipo === 'video' ? 'selected' : ''}>Vídeo do YouTube</option>
+                </select>
+                <input type="text" placeholder="Título do Bloco" class="bloco-titulo form-input mb-2" value="${bloco.titulo}" required>
+                <input type="text" placeholder="Conteúdo (texto, URL do link ou URL do vídeo)" class="bloco-conteudo form-input" value="${bloco.conteudo}" required>
+            `;
+            container.appendChild(div);
+        };
+
         window.openModalForNew = () => {
-            document.getElementById('modal-form').reset();
-            document.getElementById('clown-id').value = '';
+            const form = document.getElementById('modal-form');
+            form.reset();
+            form.removeAttribute('data-clown-id');
+            form.removeAttribute('data-foto-path');
+            document.getElementById('blocos-container').innerHTML = '';
+            document.getElementById('foto-preview').classList.add('hidden');
             document.getElementById('modal-title').innerText = 'Adicionar Novo Palhaço';
-            document.getElementById('corFundo').value = '#fef3c7';
-            document.getElementById('instagramProjeto').value = 'https://instagram.com/seuprojeto';
             document.getElementById('modal').classList.remove('hidden');
         };
 
         window.openModalForEdit = (clown) => {
-            document.getElementById('modal-form').reset();
-            document.getElementById('clown-id').value = clown.id;
-            document.getElementById('nomePalhaco').value = clown.nomePalhaco;
-            document.getElementById('nomeReal').value = clown.nomeReal;
-            document.getElementById('frase').value = clown.frase;
-            document.getElementById('instagramProjeto').value = clown.instagramProjeto;
-            document.getElementById('corFundo').value = clown.corFundo;
+            openModalForNew();
             document.getElementById('modal-title').innerText = 'Editar Palhaço';
-            document.getElementById('modal').classList.remove('hidden');
+            const form = document.querySelector('#modal-form');
+            form.dataset.clownId = clown.id;
+            form.dataset.fotoPath = clown.fotoPath || '';
+
+            document.getElementById('nomePalhaco').value = clown.nomePalhaco;
+            document.getElementById('profissao').value = clown.profissao;
+            document.getElementById('bio').value = clown.bio;
+            
+            if(clown.fotoUrl) {
+                const preview = document.getElementById('foto-preview');
+                preview.src = clown.fotoUrl;
+                preview.classList.remove('hidden');
+            }
+
+            if (clown.blocos) {
+                clown.blocos.forEach(bloco => adicionarBloco(bloco));
+            }
         };
 
-        window.closeModal = () => {
-            document.getElementById('modal').classList.add('hidden');
-        };
+        window.closeModal = () => document.getElementById('modal').classList.add('hidden');
 
         document.getElementById('modal-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = document.getElementById('clown-id').value;
+            const saveButton = document.getElementById('save-button');
+            saveButton.disabled = true;
+            saveButton.innerText = 'Salvando...';
+
+            const clownId = e.target.dataset.clownId;
+            const fotoFile = document.getElementById('foto').files[0];
+            let fotoUrl = document.getElementById('foto-preview').src;
+            let fotoPath = e.target.dataset.fotoPath || '';
+
+            if (fotoFile) {
+                renderLoading('Enviando foto...');
+                fotoPath = `fotos/${Date.now()}-${fotoFile.name}`;
+                const storageRef = ref(storage, fotoPath);
+                await uploadBytes(storageRef, fotoFile);
+                fotoUrl = await getDownloadURL(storageRef);
+            }
+
+            const blocos = Array.from(document.querySelectorAll('#blocos-container > div')).map(div => ({
+                tipo: div.querySelector('.bloco-tipo').value,
+                titulo: div.querySelector('.bloco-titulo').value,
+                conteudo: div.querySelector('.bloco-conteudo').value
+            }));
+
             const clownData = {
                 nomePalhaco: document.getElementById('nomePalhaco').value,
-                nomeReal: document.getElementById('nomeReal').value,
-                frase: document.getElementById('frase').value,
-                instagramProjeto: document.getElementById('instagramProjeto').value,
-                corFundo: document.getElementById('corFundo').value,
+                profissao: document.getElementById('profissao').value,
+                bio: document.getElementById('bio').value,
+                fotoUrl,
+                fotoPath,
+                blocos
             };
 
             try {
-                if (id) {
-                    await setDoc(doc(db, `artifacts/${appId}/public/data/clowns`, id), clownData, { merge: true });
-                } else {
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/clowns`), clownData);
-                }
+                const docRef = clownId ? doc(db, `artifacts/${appId}/public/data/clowns`, clownId) : doc(collection(db, `artifacts/${appId}/public/data/clowns`));
+                await setDoc(docRef, clownData, { merge: true });
                 closeModal();
+                router(); // Recarrega a view atual
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Não foi possível salvar.");
+            } finally {
+                saveButton.disabled = false;
+                saveButton.innerText = 'Salvar';
             }
         });
 
-        window.handleDelete = async (id) => {
+        window.handleDelete = async (id, fotoPath) => {
             if (confirm('Tem certeza que deseja apagar este palhaço?')) {
                 try {
                     await deleteDoc(doc(db, `artifacts/${appId}/public/data/clowns`, id));
+                    if (fotoPath) {
+                        const fotoRef = ref(storage, fotoPath);
+                        await deleteObject(fotoRef);
+                    }
                 } catch (error) {
                     console.error("Erro ao deletar:", error);
-                    alert("Não foi possível apagar.");
+                    alert("Ocorreu um erro ao apagar. Verifique o console.");
                 }
             }
         };
 
-        window.handleCopyLink = (id) => {
-            // Pega a URL atual e remove qualquer hash (#) existente.
-            const baseUrl = window.location.href.split('#')[0];
-            // Constrói o novo link corretamente.
-            const link = `${baseUrl}#/palhaco/${id}`;
-            
-            const textArea = document.createElement("textarea");
-            textArea.value = link;
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                alert('Link copiado para a área de transferência!');
-            } catch (err) {
-                console.error('Falha ao copiar:', err);
-                alert('Não foi possível copiar o link.');
-            }
-            document.body.removeChild(textArea);
-        };
-
-        // --- Roteador Simples ---
         function router() {
             const hash = window.location.hash;
             if (hash.startsWith('#/palhaco/')) {
-                const clownId = hash.split('/')[2];
-                renderClownCard(clownId);
+                renderClownCard(hash.split('/')[2]);
             } else if (hash === '#admin') {
                 renderAdminPanel();
             } else {
@@ -287,12 +299,8 @@
             }
         }
 
-        // Ouve mudanças na URL (hash) para navegar entre as "páginas"
         window.addEventListener('hashchange', router);
-        
-        // Garante que a rota correta seja carregada na primeira vez
         router();
-
     </script>
 </body>
 </html>
