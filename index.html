@@ -158,6 +158,7 @@
         function renderAdminPanel() {
             renderLoading();
             const clownsCollectionRef = collection(db, `artifacts/${appId}/public/data/clowns`);
+            
             onSnapshot(clownsCollectionRef, (snapshot) => {
                 const clownsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 const clownsHtml = clownsList.map(clown => `
@@ -185,6 +186,13 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${clownsHtml}</div>
                     </div>
                 `;
+            }, (error) => { // <-- CORREÇÃO APLICADA AQUI
+                console.error("Erro ao buscar dados do Firestore: ", error);
+                appContainer.innerHTML = `<div class="text-center p-8">
+                    <h2 class="text-2xl font-bold text-red-600">Opa! Algo deu errado.</h2>
+                    <p class="mt-2 text-gray-700">Não foi possível carregar os dados. Verifique sua conexão e as regras de segurança do Firestore no console do Firebase.</p>
+                    <p class="mt-2 text-sm text-gray-500">Erro: ${error.message}</p>
+                </div>`;
             });
         }
 
@@ -252,7 +260,6 @@
             let fotoPath = e.target.dataset.fotoPath || '';
 
             if (fotoFile) {
-                renderLoading('Enviando foto...');
                 fotoPath = `fotos/${Date.now()}-${fotoFile.name}`;
                 const storageRef = ref(storage, fotoPath);
                 await uploadBytes(storageRef, fotoFile);
@@ -278,7 +285,6 @@
                 const docRef = clownId ? doc(db, `artifacts/${appId}/public/data/clowns`, clownId) : doc(collection(db, `artifacts/${appId}/public/data/clowns`));
                 await setDoc(docRef, clownData, { merge: true });
                 closeModal();
-                router(); // Recarrega a view atual
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Não foi possível salvar.");
