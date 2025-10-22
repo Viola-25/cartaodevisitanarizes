@@ -21,9 +21,9 @@
     .card-photo { width:82px; height:82px; border-radius:50%; object-fit:cover; background:#eee; flex-shrink:0;}
     .card-info { flex:1; }
     .card-actions { display:flex; gap:8px; }
-    .copiar-link { background:var(--accent);}
+    .copiar-link { background: var(--accent); margin-top: 6px; /* evita sobreposição com o link */}
     .ok-copied { color:var(--accent); font-size:0.95em; margin-left:8px }
-    .card-link { font-size:0.95em; color:#222; background:#f4f4f4; padding:2px 8px; border-radius:6px; }
+    .card-link { font-size: 0.95em; color: #222; background: #f4f4f4; padding: 2px 8px; border-radius: 6px; display: inline-block; word-break: break-all; margin-bottom: 6px; /* adicionado espaçamento abaixo do link */}
     .logout { background:#777; }
     .modal-bg { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; align-items:center; justify-content:center; z-index:1000;}
     .modal-bg.active { display:flex;}
