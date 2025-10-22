@@ -41,7 +41,6 @@
       .modal-box, .container { max-width:100vw; width:97vw;}
       .header { font-size:1.1em; }
     }
-    /* Cartão individual */
     .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 70%, var(--secondary) 100%);}
     .indv-card { background:#fff; border-radius:30px; padding:38px 27px; max-width:440px; width:96vw; box-shadow:0 2px 40px #0003; display:flex; flex-direction:column; align-items:center;}
     .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:7px solid var(--background);}
@@ -66,7 +65,6 @@
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
     import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-
     const firebaseConfig = {
       apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
       authDomain: "cartoes-palhacos-app.firebaseapp.com",
@@ -81,45 +79,25 @@
     const auth = getAuth(app);
     const storage = getStorage(app);
 
-    function getParamId() {
-      const url = new URL(window.location.href);
-      return url.searchParams.get('id');
-    }
+    function getParamId() { const url = new URL(window.location.href); return url.searchParams.get('id'); }
 
     async function getPalhacos() {
       const palhacos = [];
       const q = query(collection(db, "palhacos"), orderBy("name", "asc"));
       const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        let d = doc.data();
-        d.key = doc.id;
-        palhacos.push(d);
-      });
+      querySnapshot.forEach((doc) => { let d = doc.data(); d.key = doc.id; palhacos.push(d); });
       return palhacos;
     }
     async function getById(id) {
       const q = query(collection(db, "palhacos"));
       const querySnapshot = await getDocs(q);
       let p = null;
-      querySnapshot.forEach((doc) => {
-        if (doc.data().id === id) {
-          let d = doc.data();
-          d.key = doc.id;
-          p = d;
-        }
-      });
+      querySnapshot.forEach((doc) => { if (doc.data().id === id) { let d = doc.data(); d.key = doc.id; p = d; } });
       return p;
     }
-    async function createPalhaco(data) {
-      await addDoc(collection(db, "palhacos"), data);
-    }
-    async function updatePalhaco(key, data) {
-      const ref = doc(db, "palhacos", key);
-      await updateDoc(ref, data);
-    }
-    async function delPalhaco(key) {
-      await deleteDoc(doc(db, "palhacos", key));
-    }
+    async function createPalhaco(data) { await addDoc(collection(db, "palhacos"), data); }
+    async function updatePalhaco(key, data) { const ref = doc(db, "palhacos", key); await updateDoc(ref, data); }
+    async function delPalhaco(key) { await deleteDoc(doc(db, "palhacos", key)); }
 
     async function renderIndvCard(id) {
       const dom = document.getElementById('main');
@@ -138,9 +116,7 @@
       let customLinksHTML = '';
       if (palhaco.customLinks && palhaco.customLinks.length) {
         customLinksHTML = '<div class="custom-links-indv">';
-        palhaco.customLinks.forEach(lk => {
-          if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank">${lk.title}</a>`;
-        })
+        palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank">${lk.title}</a>`; });
         customLinksHTML += '</div>';
       }
       dom.innerHTML = `<div class="center-card-indv">
@@ -169,11 +145,8 @@
       </div>`;
       document.getElementById('loginform').onsubmit = async (e) => {
         e.preventDefault();
-        try {
-          await signInWithEmailAndPassword(auth, luser.value, lsenha.value);
-        } catch {
-          document.getElementById('loginError').innerText = "Login inválido!";
-        }
+        try { await signInWithEmailAndPassword(auth, luser.value, lsenha.value); }
+        catch { document.getElementById('loginError').innerText = "Login inválido!"; }
       }
     }
 
@@ -223,10 +196,7 @@
       if (key) {
         const ref = doc(db, "palhacos", key);
         const snap = await getDoc(ref);
-        if (snap.exists()) {
-          data = snap.data();
-          isEdit = true;
-        }
+        if (snap.exists()) { data = snap.data(); isEdit = true; }
       }
       renderModalForm(data, isEdit, key);
     }
@@ -301,7 +271,8 @@
         );
       }
       document.getElementById('f_photo').oninput = function(){
-        photo-preview.src = document.getElementById('f_photo').value;
+        var preview = document.getElementById('photo-preview');
+        if (preview) preview.src = document.getElementById('f_photo').value;
       }
       document.getElementById('palhacoForm').onsubmit = async function(e){
         e.preventDefault();
@@ -338,9 +309,7 @@
         renderAdmin();
       }
     }
-    function formErr(msg){
-      document.getElementById('form-err').innerText = msg;
-    }
+    function formErr(msg){ document.getElementById('form-err').innerText = msg; }
     window.addCustomLink = function () {
       const c = document.createElement('div');
       c.className="custom-link-row";
@@ -353,21 +322,15 @@
         renderAdmin();
       }
     }
-    window.logout = function () {
-      signOut(auth);
-    }
+    window.logout = function () { signOut(auth); }
 
     onAuthStateChanged(auth, (user) => {
       const idParam = getParamId();
-      if (idParam) {
-        renderIndvCard(idParam);
-      }
+      if (idParam) renderIndvCard(idParam);
       else if (user) renderAdmin();
       else renderLogin();
     });
-    document.getElementById('modal-bg').onclick = function (e) {
-      if (e.target === this) window.closeModal();
-    }
+    document.getElementById('modal-bg').onclick = function (e) { if (e.target === this) window.closeModal(); }
   </script>
 </body>
 </html>
