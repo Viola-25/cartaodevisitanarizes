@@ -7,43 +7,148 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@400;700&display=swap" />
   <style>
-    :root { --primary: #E74C3C; --secondary: #F39C12; --accent: #3498DB; --background: #F8F9FA; --card: #fff; --radius: 14px; }
-    body { background: var(--background); margin:0; font-family: 'Montserrat', sans-serif; }
-    .header { background: var(--primary); color:#fff; padding:24px 0; text-align:center; font-family: 'Fredoka One', cursive; font-size:2.2em;}
-    .admin-btns { display:flex; flex-wrap:wrap; gap:12px; margin:18px 0; justify-content:center;}
-    .btn, button { padding: 8px 22px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer; transition:all .2s; }
-    .btn.secondary { background:var(--secondary);} .btn.accent { background: var(--accent);}
-    .btn:disabled { opacity:0.5; cursor: not-allowed;}
-    .container { max-width:560px; margin:18px auto 0; }
-    .card-list { display:flex; flex-direction:column; gap:18px;}
-    .admin-card { background:var(--card); border-radius:var(--radius); box-shadow:0 2px 14px #0001; padding:20px 16px; display:flex; flex-direction:column; gap:12px;}
-    .card-photo { width:82px; height:82px; border-radius:50%; object-fit:cover; background:#eee; flex-shrink:0;}
-    .card-header { display:flex; gap:20px; align-items:center;}
-    .card-info { flex:1; }
-    .card-link-block { display:flex; flex-direction:column; gap:6px; margin-top:4px;}
-    .card-link { font-size:0.9em; color:#222; background:#f4f4f4; padding:3px 8px; border-radius:6px; word-break:break-all; }
-    .copiar-link { font-size:0.9em; background:var(--accent); align-self:flex-start;}
-    .ok-copied { color:var(--accent); font-size:0.9em; }
-    .card-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-start; margin-top:8px; }
-    .logout { background:#777; }
+    :root {
+      --primary: #E74C3C;
+      --secondary: #F39C12;
+      --accent: #3498DB;
+      --background: #F8F9FA;
+      --card: #fff;
+      --radius: 14px;
+    }
+    body {
+      background: var(--background);
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 24px 0;
+      text-align: center;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.2em;
+    }
+    .admin-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+      justify-content: center;
+    }
+    .btn, button {
+      padding: 8px 22px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn.secondary { background: var(--secondary); }
+    .btn.accent { background: var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .modal-bg { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; align-items:center; justify-content:center; z-index:1000;}
-    .modal-bg.active { display:flex;}
-    .modal-box { background:#fff; border-radius:var(--radius); box-shadow:0 4px 26px #0002; max-width:96vw; width:96vw; max-width:420px; padding:30px 22px 18px 22px; position:relative; max-height:90vh; overflow-y:auto;}
-    @media (max-width:600px){ .modal-box, .container { max-width:100vw; width:97vw;} .header { font-size:1.1em; } }
+    .container { max-width: 560px; margin: 18px auto 0; }
+    .card-list { display: flex; flex-direction: column; gap: 18px; }
 
-    .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 70%, var(--secondary) 100%);}
-    .indv-card { background:#fff; border-radius:30px; padding:38px 27px; max-width:440px; width:96vw; box-shadow:0 2px 40px #0003; display:flex; flex-direction:column; align-items:center;}
-    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:7px solid var(--background);}
-    .indv-name { font-family:'Fredoka One', cursive; font-size:2em;  color:var(--primary);}
-    .indv-role { color:var(--secondary); font-weight:700; margin-bottom:10px;}
-    .indv-bio { margin:10px 0 16px 0; text-align:center;  font-size:1.07em; color:#333; max-width:360px;}
-    .soc-icons { display:flex; gap:16px; margin-bottom:14px;}
-    .soc-icons a, .custom-links-indv a { font-size:2em; color:var(--accent);}
-    .custom-links-indv { margin-bottom:16px; display:flex; gap:9px; flex-wrap:wrap;}
-    .custom-links-indv a { background: var(--secondary); color:#fff; padding:6px 14px; border-radius:8px; font-size:1em; display:inline-block;}
-    .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px;}
-    .notfound { color:#fff; text-align:center; font-size:1.3em;}
+    .admin-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 14px #0001;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .card-photo {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      flex-shrink: 0;
+    }
+    .card-info {
+      flex: 1;
+    }
+    .card-info div:first-child {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 1.07em;
+    }
+    .card-info div:nth-child(2) {
+      font-size: 0.96em;
+      color: var(--secondary);
+    }
+
+    .card-link-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-link {
+      font-size: 0.9em;
+      color: #222;
+      background: #f4f4f4;
+      padding: 3px 8px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+    .copiar-link {
+      align-self: flex-start;
+      font-size: 0.9em;
+      background: var(--accent);
+    }
+    .ok-copied {
+      color: var(--accent);
+      font-size: 0.9em;
+      margin-left: 8px;
+    }
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+    .logout { background: #777; }
+
+    .modal-bg {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0008;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-bg.active { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 26px #0002;
+      width: 96vw;
+      max-width: 420px;
+      padding: 30px 22px 18px 22px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* Responsividade */
+    @media (max-width:600px){
+      .modal-box, .container { max-width: 97vw; }
+      .header { font-size: 1.3em; }
+    }
   </style>
 </head>
 <body>
@@ -53,7 +158,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
-    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, setDoc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
     import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
 
     const firebaseConfig = {
@@ -68,37 +173,48 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const storage = getStorage(app);
 
-    function getParamId() { const url = new URL(window.location.href); return url.searchParams.get('id'); }
-    async function getPalhacos() { const palhacos=[]; const q=query(collection(db,"palhacos"),orderBy("name","asc")); const snap=await getDocs(q); snap.forEach(doc=>{let d=doc.data(); d.key=doc.id; palhacos.push(d)}); return palhacos;}
-    async function getById(id){ const snap=await getDocs(collection(db,"palhacos")); let p=null; snap.forEach(doc=>{if(doc.data().id===id){let d=doc.data(); d.key=doc.id; p=d;}}); return p;}
-    async function createPalhaco(data){ await addDoc(collection(db,"palhacos"),data);}
-    async function updatePalhaco(key,data){ await updateDoc(doc(db,"palhacos",key),data);}
-    async function delPalhaco(key){ await deleteDoc(doc(db,"palhacos",key));}
+    function getParamId(){ const url = new URL(window.location.href); return url.searchParams.get("id"); }
+
+    async function getPalhacos(){
+      const palhacos = [];
+      const q = query(collection(db,"palhacos"), orderBy("name","asc"));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach((doc)=>{ let d = doc.data(); d.key = doc.id; palhacos.push(d); });
+      return palhacos;
+    }
+
+    async function getById(id){
+      const q = query(collection(db,"palhacos"));
+      const querySnapshot = await getDocs(q);
+      for (const docu of querySnapshot.docs){
+        if(docu.data().id === id){ let d = docu.data(); d.key = docu.id; return d; }
+      }
+      return null;
+    }
 
     async function renderAdmin(){
-      const dom=document.getElementById('main');
-      const palhacos=await getPalhacos();
-      let list='';
+      const dom = document.getElementById("main");
+      const palhacos = await getPalhacos();
       if(palhacos.length===0){
-        list=`<div style="text-align:center;color:#666;">Nenhum palhaço cadastrado.<br>Clique em <b>Adicionar Novo Palhaço</b>!</div>`;
-      } else {
-        list='<div class="card-list">';
-        palhacos.forEach(p=>{
-          const link=`${window.location.origin}${window.location.pathname}?id=${p.id}`;
-          list += `
+        dom.innerHTML = `<div style="text-align:center;color:#666;margin-top:40px;">Nenhum palhaço cadastrado.<br>Clique em <b>Adicionar Novo Palhaço</b>!</div>`;
+        return;
+      }
+      let list = '<div class="card-list">';
+      palhacos.forEach(p=>{
+        const shareLink = `${window.location.origin}${window.location.pathname}?id=${p.id}`;
+        list += `
           <div class="admin-card">
             <div class="card-header">
               <img src="${p.photo}" class="card-photo" />
               <div class="card-info">
-                <div style="font-weight:700;color:var(--primary);font-size:1.07em">${p.name}</div>
-                <div style="font-size:0.96em;color:var(--secondary);">${p.jobTitle ?? ''}</div>
+                <div>${p.name}</div>
+                <div>${p.jobTitle ?? ''}</div>
               </div>
             </div>
             <div class="card-link-block">
-              <div class="card-link">${link}</div>
-              <button class="btn copiar-link" onclick="navigator.clipboard.writeText('${link}');this.nextElementSibling.style.display='inline';setTimeout(()=>this.nextElementSibling.style.display='none',1500)">Copiar Link</button>
+              <div class="card-link">${shareLink}</div>
+              <button class="btn copiar-link" onclick="navigator.clipboard.writeText('${shareLink}');this.nextElementSibling.style.display='inline';setTimeout(()=>this.nextElementSibling.style.display='none',1500)">Copiar Link</button>
               <span class="ok-copied" style="display:none;">✓ Link copiado!</span>
             </div>
             <div class="card-actions">
@@ -107,26 +223,23 @@
               <button class="btn logout" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
             </div>
           </div>`;
-        });
-        list+='</div>';
-      }
+      });
+      list += `</div>`;
       dom.innerHTML = `
-      <div class="header">Painel de Administração</div>
-      <div class="admin-btns">
-        <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo Palhaço</button>
-        <button class="btn logout" onclick="window.logout()"><i class="fa fa-sign-out"></i> Sair</button>
-      </div>${list}`;
+        <div class="header">Painel de Administração</div>
+        <div class="admin-btns">
+          <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo</button>
+          <button class="btn logout" onclick="window.logout()"><i class="fa fa-sign-out"></i> Sair</button>
+        </div>
+        ${list}
+      `;
     }
 
-    // Mantidas todas as funções originais
-    // (ShowEditModal, closeModal, renderModalForm, renderLogin, renderIndvCard, etc.)
-    // ...
-
     onAuthStateChanged(auth,(user)=>{
-      const idParam=getParamId();
-      if(idParam) renderIndvCard(idParam);
-      else if(user) renderAdmin();
-      else renderLogin();
+      const idParam = getParamId();
+      if(idParam){ /* render card externo */ }
+      else if(user){ renderAdmin(); }
+      else{ /* render login */ }
     });
   </script>
 </body>
