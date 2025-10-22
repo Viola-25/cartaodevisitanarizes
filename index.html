@@ -8,20 +8,12 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@400;700&display=swap" />
   <style>
-    :root {
-      --primary: #E74C3C;
-      --secondary: #F39C12;
-      --accent: #3498DB;
-      --background: #F8F9FA;
-      --card: #fff;
-      --radius: 14px;
-    }
+    :root { --primary: #E74C3C; --secondary: #F39C12; --accent: #3498DB; --background: #F8F9FA; --card: #fff; --radius: 14px; }
     body { background: var(--background); margin:0; font-family: 'Montserrat', sans-serif; }
     .header { background: var(--primary); color:#fff; padding:24px 0; text-align:center; font-family: 'Fredoka One', cursive; font-size:2.2em;}
     .admin-btns { display:flex; gap:12px; margin:18px 0; }
     .btn, button { padding: 8px 22px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer; transition:all .2s; }
-    .btn.secondary { background:var(--secondary);}
-    .btn.accent { background: var(--accent);}
+    .btn.secondary { background:var(--secondary);} .btn.accent { background: var(--accent);}
     .btn:disabled { opacity:0.5; cursor: not-allowed;}
     .container { max-width:560px; margin:18px auto 0; }
     .card-list { display:flex; flex-direction:column; gap:18px;}
@@ -70,11 +62,11 @@
 
   <!-- Firebase SDKs -->
   <script type="module">
-    // CONFIGURAÇÃO DO FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    
+    import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
       authDomain: "cartoes-palhacos-app.firebaseapp.com",
@@ -87,15 +79,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const storage = getStorage(app);
 
-    // Utilidade: Pega parâmetro ?id na URL
     function getParamId() {
       const url = new URL(window.location.href);
       return url.searchParams.get('id');
     }
 
     async function getPalhacos() {
-      // Retorna todos os palhaços (ordenando pelo nome)
       const palhacos = [];
       const q = query(collection(db, "palhacos"), orderBy("name", "asc"));
       const querySnapshot = await getDocs(q);
@@ -107,7 +98,6 @@
       return palhacos;
     }
     async function getById(id) {
-      // Busca 1 palhaço pelo campo id
       const q = query(collection(db, "palhacos"));
       const querySnapshot = await getDocs(q);
       let p = null;
@@ -131,7 +121,6 @@
       await deleteDoc(doc(db, "palhacos", key));
     }
 
-    // Renderiza cartão individual
     async function renderIndvCard(id) {
       const dom = document.getElementById('main');
       dom.innerHTML = '<div class="center-card-indv" style="min-height:85vh;width:100vw"><div style="color:#fff">Carregando...</div></div>';
@@ -167,7 +156,6 @@
       </div>`;
     }
 
-    // Painel de autenticação/login
     function renderLogin() {
       const dom = document.getElementById('main');
       dom.innerHTML = `<div class="container">
@@ -189,7 +177,6 @@
       }
     }
 
-    // Painel principal de administração
     async function renderAdmin() {
       const dom = document.getElementById('main');
       const palhacos = await getPalhacos();
@@ -229,13 +216,11 @@
       `;
     }
 
-    // MODAL - Criação/Edição
     window.showEditModal = async function (key) {
       document.getElementById('modal-bg').classList.add('active');
       let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[]};
       let isEdit = false;
       if (key) {
-        // Busca se edição
         const ref = doc(db, "palhacos", key);
         const snap = await getDoc(ref);
         if (snap.exists()) {
@@ -250,7 +235,7 @@
       setTimeout(()=>document.getElementById('modal-bg').innerHTML='', 150);
     }
     function renderModalForm(data, isEdit, key) {
-      let html = `<form id="palhacoForm">
+      let html = `<form id="palhacoForm" autocomplete="off">
         <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
         <div class="modal-title">${isEdit ? "Editar Palhaço" : "Adicionar Novo Palhaço"}</div>
         <div class="form-grp"><label>Nome do Palhaço *</label>
@@ -258,11 +243,12 @@
         </div>
         <div class="form-grp"><label>ID Único *</label>
           <input required id="f_id" value="${data.id||""}" pattern="[a-z0-9-]+" />
-          <div style="font-size:0.9em;color:#888;margin-top:3px;">Link: <b>?id=${data.id||""}</b> (use letras minúsculas, números, hífen)</div>
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">Link: <b>?id=${data.id||""}</b> (letras minúsculas, números, hífen)</div>
         </div>
-        <div class="form-grp"><label>Foto (URL) *</label>
-          <input required id="f_photo" value="${data.photo||""}" />
-          <img src="${data.photo||'https://i.imgur.com/wIxRvus.png'}" onerror="this.src='https://i.imgur.com/wIxRvus.png';" style="width:70px;height:70px; border-radius:50%; background:#eee;margin-top:7px;" />
+        <div class="form-grp"><label>Foto - Escolher arquivo ou URL *</label>
+          <input type="file" id="f_photo_file" accept="image/*" />
+          <input required id="f_photo" value="${data.photo||""}" placeholder="URL da foto" style="margin-top:10px;" />
+          <img src="${data.photo||'https://i.imgur.com/wIxRvus.png'}" id="photo-preview" onerror="this.src='https://i.imgur.com/wIxRvus.png';" style="width:70px;height:70px; border-radius:50%; background:#eee;margin-top:7px;" />
         </div>
         <div class="form-grp"><label>Cargo/Função</label>
           <input id="f_role" value="${data.jobTitle||""}" />
@@ -279,7 +265,6 @@
         </div>
         <div class="form-grp"><label>Links Personalizados</label>
           <div class="custom-links" id="custom-links">`;
-      // renderiza links já existentes
       (data.customLinks||[]).forEach((lk,i)=>{
         html+=`<div class="custom-link-row">
           <input value="${lk.title||""}" placeholder="Título" id="l_t_${i}" />
@@ -297,9 +282,29 @@
         <div id="form-err" style="color:#d00;margin-top:10px;"></div>
       </form>`;
       document.getElementById('modal-bg').innerHTML = `<div class="modal-box">${html}</div>`;
+      // Upload Handler
+      document.getElementById('f_photo_file').onchange = async function(e){
+        const file = e.target.files[0];
+        if (!file) return;
+        document.getElementById('f_photo').value = "Enviando...";
+        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
+        const storageRef = stRef(storage, 'palhacos/' + fileName);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on('state_changed', 
+          (snapshot) => {},
+          (error) => {formErr("Erro ao enviar imagem.");},
+          async () => {
+            const url = await getDownloadURL(storageRef);
+            document.getElementById('f_photo').value = url;
+            document.getElementById('photo-preview').src = url;
+          }
+        );
+      }
+      document.getElementById('f_photo').oninput = function(){
+        photo-preview.src = document.getElementById('f_photo').value;
+      }
       document.getElementById('palhacoForm').onsubmit = async function(e){
         e.preventDefault();
-        // Validação
         const name = f_nome.value.trim();
         const id = f_id.value.trim().toLowerCase();
         const photo = f_photo.value.trim();
@@ -307,7 +312,6 @@
         if (!id.match(/^[a-z0-9-]+$/)) { formErr("ID inválido! Use letras minúsculas, números, hífen."); return; }
         let allPalhacos = await getPalhacos();
         if ((!isEdit || key===undefined) && allPalhacos.find(x=>x.id===id)) { formErr("ID já existe!"); return; }
-        // Links personalizados
         let customLinks = [];
         Array.from(document.getElementById('custom-links').children).forEach(row=>{
           const title = row.children[0].value.trim();
@@ -353,7 +357,6 @@
       signOut(auth);
     }
 
-    // Auth observer e roteamento principal
     onAuthStateChanged(auth, (user) => {
       const idParam = getParamId();
       if (idParam) {
@@ -362,7 +365,6 @@
       else if (user) renderAdmin();
       else renderLogin();
     });
-    // Modal BG para sair ao clicar fora
     document.getElementById('modal-bg').onclick = function (e) {
       if (e.target === this) window.closeModal();
     }
