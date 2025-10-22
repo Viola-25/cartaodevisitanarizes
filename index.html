@@ -4,67 +4,163 @@
   <meta charset="UTF-8" />
   <title>Narizes de Plantão - Cartões Online</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- Google Fonts & Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Montserrat:wght@400;700&display=swap" />
   <style>
-    :root { --primary: #E74C3C; --secondary: #F39C12; --accent: #3498DB; --background: #F8F9FA; --card: #fff; --radius: 14px; }
-    body { background: var(--background); margin:0; font-family: 'Montserrat', sans-serif; }
-    .header { background: var(--primary); color:#fff; padding:24px 0; text-align:center; font-family: 'Fredoka One', cursive; font-size:2.2em;}
-    .admin-btns { display:flex; gap:12px; margin:18px 0; }
-    .btn, button { padding: 8px 22px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer; transition:all .2s; }
-    .btn.secondary { background:var(--secondary);} .btn.accent { background: var(--accent);}
-    .btn:disabled { opacity:0.5; cursor: not-allowed;}
-    .container { max-width:560px; margin:18px auto 0; }
-    .card-list { display:flex; flex-direction:column; gap:18px;}
-    .palhaco-card, .admin-card { background:var(--card); border-radius:var(--radius); box-shadow:0 2px 14px #0001; padding:20px 16px; display:flex; gap:20px; align-items:center; }
-    .card-photo { width:82px; height:82px; border-radius:50%; object-fit:cover; background:#eee; flex-shrink:0;}
-    .card-info { flex:1; }
-    .card-actions { display:flex; gap:8px; }
-    .copiar-link { background:var(--accent);}
-    .ok-copied { color:var(--accent); font-size:0.95em; margin-left:8px }
-    .card-link { font-size:0.95em; color:#222; background:#f4f4f4; padding:2px 8px; border-radius:6px; }
-    .logout { background:#777; }
-    .modal-bg { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; align-items:center; justify-content:center; z-index:1000;}
-    .modal-bg.active { display:flex;}
-    .modal-box { background:#fff; border-radius:var(--radius); box-shadow:0 4px 26px #0002; max-width:98vw; width:96vw; max-width:420px; padding:30px 22px 18px 22px; position:relative; max-height:90vh; overflow-y:auto;}
-    .modal-title { font-family:'Fredoka One',cursive; font-size:1.3em; margin-bottom:21px;}
-    .form-grp { margin-bottom:16px;}
-    .form-grp label { font-weight:700; font-size:1em; margin-bottom:2px; display:block;}
-    .form-grp input, .form-grp textarea { width:100%; padding:7px 9px; border-radius:7px; border:1px solid #ddd; font-size:1em;}
-    .form-grp textarea { min-height:55px;}
-    .custom-links { margin-top:8px;}
-    .custom-link-row { display:flex; gap:8px; margin-bottom:7px;}
-    .custom-link-row input { flex:1; }
-    .close-modal { position:absolute; top:10px; right:16px; background:none; border:none; color:#d00; font-size:1.6em; cursor:pointer;}
-    @media (max-width:600px){
-      .modal-box, .container { max-width:100vw; width:97vw;}
-      .header { font-size:1.1em; }
+    :root {
+      --primary: #E74C3C;
+      --secondary: #F39C12;
+      --accent: #3498DB;
+      --background: #F8F9FA;
+      --card: #fff;
+      --radius: 14px;
     }
-    .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 70%, var(--secondary) 100%);}
-    .indv-card { background:#fff; border-radius:30px; padding:38px 27px; max-width:440px; width:96vw; box-shadow:0 2px 40px #0003; display:flex; flex-direction:column; align-items:center;}
-    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:7px solid var(--background);}
-    .indv-name { font-family:'Fredoka One', cursive; font-size:2em;  color:var(--primary);}
-    .indv-role { color:var(--secondary); font-weight:700; margin-bottom:10px;}
-    .indv-bio { margin:10px 0 16px 0; text-align:center;  font-size:1.07em; color:#333; max-width:360px;}
-    .soc-icons { display:flex; gap:16px; margin-bottom:14px;}
-    .soc-icons a, .custom-links-indv a { font-size:2em; color:var(--accent);}
-    .custom-links-indv { margin-bottom:16px; display:flex; gap:9px; flex-wrap:wrap;}
-    .custom-links-indv a { background: var(--secondary); color:#fff; padding:6px 14px; border-radius:8px; font-size:1em; display:inline-block;}
-    .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px;}
-    .notfound { color:#fff; text-align:center; font-size:1.3em;}
+    body {
+      background: var(--background);
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 24px 0;
+      text-align: center;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.2em;
+    }
+    .admin-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 18px 0;
+      justify-content: center;
+    }
+    .btn, button {
+      padding: 8px 22px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .btn.secondary { background: var(--secondary); }
+    .btn.accent { background: var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .container { max-width: 560px; margin: 18px auto 0; }
+    .card-list { display: flex; flex-direction: column; gap: 18px; }
+
+    .admin-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 14px #0001;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-header {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .card-photo {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #eee;
+      flex-shrink: 0;
+    }
+    .card-info {
+      flex: 1;
+    }
+    .card-info div:first-child {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 1.07em;
+    }
+    .card-info div:nth-child(2) {
+      font-size: 0.96em;
+      color: var(--secondary);
+    }
+
+    .card-link-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-link {
+      font-size: 0.9em;
+      color: #222;
+      background: #f4f4f4;
+      padding: 3px 8px;
+      border-radius: 6px;
+      word-break: break-all;
+    }
+    .copiar-link {
+      align-self: flex-start;
+      font-size: 0.9em;
+      background: var(--accent);
+    }
+    .ok-copied {
+      color: var(--accent);
+      font-size: 0.9em;
+      margin-left: 8px;
+    }
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+      margin-top: 8px;
+    }
+    .logout { background: #777; }
+
+    .modal-bg {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #0008;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-bg.active { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 26px #0002;
+      width: 96vw;
+      max-width: 420px;
+      padding: 30px 22px 18px 22px;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    /* Responsividade */
+    @media (max-width:600px){
+      .modal-box, .container { max-width: 97vw; }
+      .header { font-size: 1.3em; }
+    }
   </style>
 </head>
 <body>
   <div id="main"></div>
   <div class="modal-bg" id="modal-bg"></div>
 
-  <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
     import { getFirestore, collection, getDocs, addDoc, doc, setDoc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
     import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
       authDomain: "cartoes-palhacos-app.firebaseapp.com",
@@ -77,260 +173,74 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const storage = getStorage(app);
 
-    function getParamId() { const url = new URL(window.location.href); return url.searchParams.get('id'); }
+    function getParamId(){ const url = new URL(window.location.href); return url.searchParams.get("id"); }
 
-    async function getPalhacos() {
+    async function getPalhacos(){
       const palhacos = [];
-      const q = query(collection(db, "palhacos"), orderBy("name", "asc"));
+      const q = query(collection(db,"palhacos"), orderBy("name","asc"));
       const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => { let d = doc.data(); d.key = doc.id; palhacos.push(d); });
+      querySnapshot.forEach((doc)=>{ let d = doc.data(); d.key = doc.id; palhacos.push(d); });
       return palhacos;
     }
-    async function getById(id) {
-      const q = query(collection(db, "palhacos"));
-      const querySnapshot = await getDocs(q);
-      let p = null;
-      querySnapshot.forEach((doc) => { if (doc.data().id === id) { let d = doc.data(); d.key = doc.id; p = d; } });
-      return p;
-    }
-    async function createPalhaco(data) { await addDoc(collection(db, "palhacos"), data); }
-    async function updatePalhaco(key, data) { const ref = doc(db, "palhacos", key); await updateDoc(ref, data); }
-    async function delPalhaco(key) { await deleteDoc(doc(db, "palhacos", key)); }
 
-    async function renderIndvCard(id) {
-      const dom = document.getElementById('main');
-      dom.innerHTML = '<div class="center-card-indv" style="min-height:85vh;width:100vw"><div style="color:#fff">Carregando...</div></div>';
-      const palhaco = await getById(id);
-      if (!palhaco) {
-        dom.innerHTML = `<div class="center-card-indv"><div class="notfound">Palhaço não encontrado!<br><a href="./" style="color:#fff;text-decoration:underline;">Voltar à lista</a></div></div>`;
+    async function getById(id){
+      const q = query(collection(db,"palhacos"));
+      const querySnapshot = await getDocs(q);
+      for (const docu of querySnapshot.docs){
+        if(docu.data().id === id){ let d = docu.data(); d.key = docu.id; return d; }
+      }
+      return null;
+    }
+
+    async function renderAdmin(){
+      const dom = document.getElementById("main");
+      const palhacos = await getPalhacos();
+      if(palhacos.length===0){
+        dom.innerHTML = `<div style="text-align:center;color:#666;margin-top:40px;">Nenhum palhaço cadastrado.<br>Clique em <b>Adicionar Novo Palhaço</b>!</div>`;
         return;
       }
-      let socIcons = '';
-      if (palhaco.instagram) socIcons += `<a href="${palhaco.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>`;
-      if (palhaco.facebook) socIcons += `<a href="${palhaco.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>`;
-      if (palhaco.twitter) socIcons += `<a href="${palhaco.twitter}" target="_blank"><i class="fab fa-x-twitter"></i></a>`;
-      if (palhaco.linkedin) socIcons += `<a href="${palhaco.linkedin}" target="_blank"><i class="fab fa-linkedin"></i></a>`;
-      if (palhaco.website) socIcons += `<a href="${palhaco.website}" target="_blank"><i class="fas fa-globe"></i></a>`;
-      let customLinksHTML = '';
-      if (palhaco.customLinks && palhaco.customLinks.length) {
-        customLinksHTML = '<div class="custom-links-indv">';
-        palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank">${lk.title}</a>`; });
-        customLinksHTML += '</div>';
-      }
-      dom.innerHTML = `<div class="center-card-indv">
-        <div class="indv-card">
-          <img src="${palhaco.photo}" alt="palhaço" class="indv-photo" onerror="this.src='https://i.imgur.com/wIxRvus.png';" />
-          <div class="indv-name">${palhaco.name}</div>
-          <div class="indv-role">${palhaco.jobTitle ?? ''}</div>
-          <div class="indv-bio">${palhaco.bio ?? ''}</div>
-          <div class="soc-icons">${socIcons}</div>
-          ${customLinksHTML}
-          <div class="ndp-logo">Narizes de Plantão 🎪</div>
-        </div>
-      </div>`;
-    }
-
-    function renderLogin() {
-      const dom = document.getElementById('main');
-      dom.innerHTML = `<div class="container">
-        <div class="header" style="margin-bottom:24px;">Painel de Administração</div>
-        <form id="loginform" style="background:#fff;padding:26px 22px;border-radius:var(--radius);box-shadow:0 2px 18px #0001;">
-          <div class="form-grp"><label>Email:</label><input id="luser" type="email" required /></div>
-          <div class="form-grp"><label>Senha:</label><input id="lsenha" type="password" required /></div>
-          <div style="margin:14px 0;"><button type="submit" class="btn">Entrar</button></div>
-          <div id="loginError" style="color:#d00"></div>
-        </form>
-      </div>`;
-      document.getElementById('loginform').onsubmit = async (e) => {
-        e.preventDefault();
-        try { await signInWithEmailAndPassword(auth, luser.value, lsenha.value); }
-        catch { document.getElementById('loginError').innerText = "Login inválido!"; }
-      }
-    }
-
-    async function renderAdmin() {
-      const dom = document.getElementById('main');
-      const palhacos = await getPalhacos();
-
-      let list = '';
-      if (palhacos.length === 0) {
-        list = `<div style="text-align:center;color:#666;">Nenhum palhaço cadastrado.<br>Clique em <b>Adicionar Novo Palhaço</b> para começar!</div>`;
-      } else {
-        list = '<div class="card-list">';
-        palhacos.forEach(p => {
-          const shareLink = `${window.location.origin}${window.location.pathname}?id=${p.id}`;
-          list += `<div class="admin-card">
-            <img src="${p.photo}" class="card-photo" />
-            <div class="card-info">
-              <div style="font-weight:700;color:var(--primary);font-size:1.07em">${p.name}</div>
-              <div style="font-size:0.96em;color:var(--secondary);">${p.jobTitle ?? ''}</div>
+      let list = '<div class="card-list">';
+      palhacos.forEach(p=>{
+        const shareLink = `${window.location.origin}${window.location.pathname}?id=${p.id}`;
+        list += `
+          <div class="admin-card">
+            <div class="card-header">
+              <img src="${p.photo}" class="card-photo" />
+              <div class="card-info">
+                <div>${p.name}</div>
+                <div>${p.jobTitle ?? ''}</div>
+              </div>
+            </div>
+            <div class="card-link-block">
               <div class="card-link">${shareLink}</div>
-              <span class="btn copiar-link" onclick="navigator.clipboard.writeText('${shareLink}');this.nextElementSibling.style.display='inline';setTimeout(()=>this.nextElementSibling.style.display='none',1500)">Copiar Link</span>
+              <button class="btn copiar-link" onclick="navigator.clipboard.writeText('${shareLink}');this.nextElementSibling.style.display='inline';setTimeout(()=>this.nextElementSibling.style.display='none',1500)">Copiar Link</button>
               <span class="ok-copied" style="display:none;">✓ Link copiado!</span>
             </div>
             <div class="card-actions">
-              <button class="btn accent" onclick="window.open('?id=${p.id}','_blank')"><i class="fa fa-eye"></i> Ver Cartão</button>
+              <button class="btn accent" onclick="window.open('?id=${p.id}','_blank')"><i class="fa fa-eye"></i> Ver</button>
               <button class="btn secondary" onclick="window.showEditModal('${p.key}')"><i class="fa fa-pen"></i> Editar</button>
               <button class="btn logout" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
             </div>
           </div>`;
-        });
-        list += "</div>";
-      }
+      });
+      list += `</div>`;
       dom.innerHTML = `
         <div class="header">Painel de Administração</div>
         <div class="admin-btns">
-          <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo Palhaço</button>
+          <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo</button>
           <button class="btn logout" onclick="window.logout()"><i class="fa fa-sign-out"></i> Sair</button>
         </div>
-        <div>${list}</div>
+        ${list}
       `;
     }
 
-    window.showEditModal = async function (key) {
-      document.getElementById('modal-bg').classList.add('active');
-      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[]};
-      let isEdit = false;
-      if (key) {
-        const ref = doc(db, "palhacos", key);
-        const snap = await getDoc(ref);
-        if (snap.exists()) { data = snap.data(); isEdit = true; }
-      }
-      renderModalForm(data, isEdit, key);
-    }
-    window.closeModal = function () {
-      document.getElementById('modal-bg').classList.remove('active');
-      setTimeout(()=>document.getElementById('modal-bg').innerHTML='', 150);
-    }
-    function renderModalForm(data, isEdit, key) {
-      let html = `<form id="palhacoForm" autocomplete="off">
-        <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
-        <div class="modal-title">${isEdit ? "Editar Palhaço" : "Adicionar Novo Palhaço"}</div>
-        <div class="form-grp"><label>Nome do Palhaço *</label>
-          <input required id="f_nome" value="${data.name||""}" />
-        </div>
-        <div class="form-grp"><label>ID Único *</label>
-          <input required id="f_id" value="${data.id||""}" pattern="[a-z0-9-]+" />
-          <div style="font-size:0.9em;color:#888;margin-top:3px;">Link: <b>?id=${data.id||""}</b> (letras minúsculas, números, hífen)</div>
-        </div>
-        <div class="form-grp"><label>Foto - Escolher arquivo ou URL *</label>
-          <input type="file" id="f_photo_file" accept="image/*" />
-          <input required id="f_photo" value="${data.photo||""}" placeholder="URL da foto" style="margin-top:10px;" />
-          <img src="${data.photo||'https://i.imgur.com/wIxRvus.png'}" id="photo-preview" onerror="this.src='https://i.imgur.com/wIxRvus.png';" style="width:70px;height:70px; border-radius:50%; background:#eee;margin-top:7px;" />
-        </div>
-        <div class="form-grp"><label>Cargo/Função</label>
-          <input id="f_role" value="${data.jobTitle||""}" />
-        </div>
-        <div class="form-grp"><label>Bio</label>
-          <textarea id="f_bio">${data.bio||""}</textarea>
-        </div>
-        <div class="form-grp"><label>Redes Sociais</label>
-          <input id="f_instagram" placeholder="Instagram" value="${data.instagram||""}" style="margin-bottom:6px;" />
-          <input id="f_facebook" placeholder="Facebook" value="${data.facebook||""}" style="margin-bottom:6px;" />
-          <input id="f_twitter" placeholder="Twitter/X" value="${data.twitter||""}" style="margin-bottom:6px;" />
-          <input id="f_linkedin" placeholder="LinkedIn" value="${data.linkedin||""}" style="margin-bottom:6px;" />
-          <input id="f_website" placeholder="Site Pessoal" value="${data.website||""}" />
-        </div>
-        <div class="form-grp"><label>Links Personalizados</label>
-          <div class="custom-links" id="custom-links">`;
-      (data.customLinks||[]).forEach((lk,i)=>{
-        html+=`<div class="custom-link-row">
-          <input value="${lk.title||""}" placeholder="Título" id="l_t_${i}" />
-          <input value="${lk.url||""}" placeholder="URL do link" id="l_u_${i}" />
-          <button type="button" onclick="this.parentElement.remove()" style="background:#e74c3c;border:none;color:#fff;font-size:1.1em;">❌</button>
-        </div>`;
-      });
-      html+=`</div>
-        <button type="button" class="btn accent" onclick="addCustomLink()" style="margin:7px auto 0 0;">+ Adicionar Link</button>
-        </div>
-        <div style="margin-top:23px;display:flex;gap:9px;justify-content:flex-end;">
-          <button type="button" class="btn secondary" onclick="window.closeModal()">Cancelar</button>
-          <button type="submit" class="btn" style="background:#27ae60;">Salvar</button>
-        </div>
-        <div id="form-err" style="color:#d00;margin-top:10px;"></div>
-      </form>`;
-      document.getElementById('modal-bg').innerHTML = `<div class="modal-box">${html}</div>`;
-      // Upload Handler
-      document.getElementById('f_photo_file').onchange = async function(e){
-        const file = e.target.files[0];
-        if (!file) return;
-        document.getElementById('f_photo').value = "Enviando...";
-        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`;
-        const storageRef = stRef(storage, 'palhacos/' + fileName);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        uploadTask.on('state_changed', 
-          (snapshot) => {},
-          (error) => {formErr("Erro ao enviar imagem.");},
-          async () => {
-            const url = await getDownloadURL(storageRef);
-            document.getElementById('f_photo').value = url;
-            document.getElementById('photo-preview').src = url;
-          }
-        );
-      }
-      document.getElementById('f_photo').oninput = function(){
-        var preview = document.getElementById('photo-preview');
-        if (preview) preview.src = document.getElementById('f_photo').value;
-      }
-      document.getElementById('palhacoForm').onsubmit = async function(e){
-        e.preventDefault();
-        const name = f_nome.value.trim();
-        const id = f_id.value.trim().toLowerCase();
-        const photo = f_photo.value.trim();
-        if (!name || !id || !photo) { formErr("Campos obrigatórios!"); return;}
-        if (!id.match(/^[a-z0-9-]+$/)) { formErr("ID inválido! Use letras minúsculas, números, hífen."); return; }
-        let allPalhacos = await getPalhacos();
-        if ((!isEdit || key===undefined) && allPalhacos.find(x=>x.id===id)) { formErr("ID já existe!"); return; }
-        let customLinks = [];
-        Array.from(document.getElementById('custom-links').children).forEach(row=>{
-          const title = row.children[0].value.trim();
-          const url = row.children[1].value.trim();
-          if(title && url) customLinks.push({title,url});
-        });
-        let obj = {
-          name, id, photo,
-          jobTitle: f_role.value,
-          bio: f_bio.value,
-          instagram: f_instagram.value,
-          facebook: f_facebook.value,
-          twitter: f_twitter.value,
-          linkedin: f_linkedin.value,
-          website: f_website.value,
-          customLinks
-        };
-        if (isEdit && key) {
-          await updatePalhaco(key, obj);
-        } else {
-          await createPalhaco(obj);
-        }
-        window.closeModal();
-        renderAdmin();
-      }
-    }
-    function formErr(msg){ document.getElementById('form-err').innerText = msg; }
-    window.addCustomLink = function () {
-      const c = document.createElement('div');
-      c.className="custom-link-row";
-      c.innerHTML = `<input placeholder="Título" /> <input placeholder="URL do link" /> <button type="button" onclick="this.parentElement.remove()" style="background:#e74c3c;border:none;color:#fff;font-size:1.1em;">❌</button>`;
-      document.getElementById('custom-links').appendChild(c);
-    }
-    window.excluirPalhaco = async function (key) {
-      if (confirm("Excluir este palhaço?")) {
-        await delPalhaco(key);
-        renderAdmin();
-      }
-    }
-    window.logout = function () { signOut(auth); }
-
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth,(user)=>{
       const idParam = getParamId();
-      if (idParam) renderIndvCard(idParam);
-      else if (user) renderAdmin();
-      else renderLogin();
+      if(idParam){ /* render card externo */ }
+      else if(user){ renderAdmin(); }
+      else{ /* render login */ }
     });
-    document.getElementById('modal-bg').onclick = function (e) { if (e.target === this) window.closeModal(); }
   </script>
 </body>
 </html>
