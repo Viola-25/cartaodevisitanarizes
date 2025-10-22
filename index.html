@@ -13,7 +13,7 @@
     .header { background: var(--primary); color:#fff; padding:24px 0; text-align:center; font-family: 'Fredoka One', cursive; font-size:2.2em;}
     .admin-btns { display:flex; gap:12px; margin:18px 0; }
     .btn, button { padding: 8px 22px; background:var(--primary); color:#fff; border:none; border-radius:var(--radius); font-weight:700; cursor:pointer; transition:all .2s; }
-    .btn.secondary { background:var(--secondary);} .btn.accent { background: var(--accent);}
+    .btn.secondary { background:var(--secondary);} .btn.accent { background: var(--accent); }
     .btn:disabled { opacity:0.5; cursor: not-allowed;}
     .container { max-width:560px; margin:18px auto 0; }
     .card-list { display:flex; flex-direction:column; gap:18px;}
@@ -21,9 +21,9 @@
     .card-photo { width:82px; height:82px; border-radius:50%; object-fit:cover; background:#eee; flex-shrink:0;}
     .card-info { flex:1; }
     .card-actions { display:flex; gap:8px; }
-    .copiar-link { background: var(--accent); margin-top: 6px; /* evita sobreposição com o link */}
+    .copiar-link { background: var(--accent); margin-top: 6px; /* evita sobreposição com o link */ }
     .ok-copied { color:var(--accent); font-size:0.95em; margin-left:8px }
-    .card-link { font-size: 0.95em; color: #222; background: #f4f4f4; padding: 2px 8px; border-radius: 6px; display: inline-block; word-break: break-all; margin-bottom: 6px; /* adicionado espaçamento abaixo do link */}
+    .card-link { font-size: 0.95em; color: #222; background: #f4f4f4; padding: 2px 8px; border-radius: 6px; display: inline-block; word-break: break-all; margin-bottom: 6px; /* adicionado espaçamento abaixo do link */ }
     .logout { background:#777; }
     .modal-bg { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0008; align-items:center; justify-content:center; z-index:1000;}
     .modal-bg.active { display:flex;}
@@ -41,18 +41,18 @@
       .modal-box, .container { max-width:100vw; width:97vw;}
       .header { font-size:1.1em; }
     }
-    .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 70%, var(--secondary) 100%);}
+    .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 70%, var(--secondary) 100%); }
     .indv-card { background:#fff; border-radius:30px; padding:38px 27px; max-width:440px; width:96vw; box-shadow:0 2px 40px #0003; display:flex; flex-direction:column; align-items:center;}
-    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:7px solid var(--background);}
-    .indv-name { font-family:'Fredoka One', cursive; font-size:2em;  color:var(--primary);}
-    .indv-role { color:var(--secondary); font-weight:700; margin-bottom:10px;}
-    .indv-bio { margin:10px 0 16px 0; text-align:center;  font-size:1.07em; color:#333; max-width:360px;}
-    .soc-icons { display:flex; gap:16px; margin-bottom:14px;}
-    .soc-icons a, .custom-links-indv a { font-size:2em; color:var(--accent);}
-    .custom-links-indv { margin-bottom:16px; display:flex; gap:9px; flex-wrap:wrap;}
-    .custom-links-indv a { background: var(--secondary); color:#fff; padding:6px 14px; border-radius:8px; font-size:1em; display:inline-block;}
-    .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px;}
-    .notfound { color:#fff; text-align:center; font-size:1.3em;}
+    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:7px solid var(--background); }
+    .indv-name { font-family:'Fredoka One', cursive; font-size:2em;  color:var(--primary); }
+    .indv-role { color:var(--secondary); font-weight:700; margin-bottom:10px; }
+    .indv-bio { margin:10px 0 16px 0; text-align:center;  font-size:1.07em; color:#333; max-width:360px; }
+    .soc-icons { display:flex; gap:16px; margin-bottom:14px; }
+    .soc-icons a, .custom-links-indv a { font-size:2em; color:var(--accent); }
+    .custom-links-indv { margin-bottom:16px; display:flex; gap:9px; flex-wrap:wrap; }
+    .custom-links-indv a { background: var(--secondary); color:#fff; padding:6px 14px; border-radius:8px; font-size:1em; display:inline-block; }
+    .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px; }
+    .notfound { color:#fff; text-align:center; font-size:1.3em; }
   </style>
 </head>
 <body>
@@ -81,6 +81,16 @@
 
     function getParamId() { const url = new URL(window.location.href); return url.searchParams.get('id'); }
 
+    // --- NOVO: formata username ou link completo para URL final ---
+    function formatLink(prefix, username) {
+      if (!username) return "";
+      username = username.trim();
+      // se o usuário já colocou um link completo, mantém como está
+      if (username.startsWith("http")) return username;
+      // remove @ inicial caso exista
+      return `${prefix}${username.replace(/^@/, "")}`;
+    }
+
     async function getPalhacos() {
       const palhacos = [];
       const q = query(collection(db, "palhacos"), orderBy("name", "asc"));
@@ -108,15 +118,15 @@
         return;
       }
       let socIcons = '';
-      if (palhaco.instagram) socIcons += `<a href="${palhaco.instagram}" target="_blank"><i class="fab fa-instagram"></i></a>`;
-      if (palhaco.facebook) socIcons += `<a href="${palhaco.facebook}" target="_blank"><i class="fab fa-facebook"></i></a>`;
-      if (palhaco.twitter) socIcons += `<a href="${palhaco.twitter}" target="_blank"><i class="fab fa-x-twitter"></i></a>`;
-      if (palhaco.linkedin) socIcons += `<a href="${palhaco.linkedin}" target="_blank"><i class="fab fa-linkedin"></i></a>`;
-      if (palhaco.website) socIcons += `<a href="${palhaco.website}" target="_blank"><i class="fas fa-globe"></i></a>`;
+      if (palhaco.instagram) socIcons += `<a href="${formatLink("https://instagram.com/", palhaco.instagram)}" target="_blank" rel="noreferrer"><i class="fab fa-instagram"></i></a>`;
+      if (palhaco.facebook) socIcons += `<a href="${formatLink("https://facebook.com/", palhaco.facebook)}" target="_blank" rel="noreferrer"><i class="fab fa-facebook"></i></a>`;
+      if (palhaco.twitter) socIcons += `<a href="${formatLink("https://x.com/", palhaco.twitter)}" target="_blank" rel="noreferrer"><i class="fab fa-x-twitter"></i></a>`;
+      if (palhaco.linkedin) socIcons += `<a href="${formatLink("https://linkedin.com/in/", palhaco.linkedin)}" target="_blank" rel="noreferrer"><i class="fab fa-linkedin"></i></a>`;
+      if (palhaco.website) socIcons += `<a href="${formatLink("", palhaco.website)}" target="_blank" rel="noreferrer"><i class="fas fa-globe"></i></a>`;
       let customLinksHTML = '';
       if (palhaco.customLinks && palhaco.customLinks.length) {
         customLinksHTML = '<div class="custom-links-indv">';
-        palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank">${lk.title}</a>`; });
+        palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank" rel="noreferrer">${lk.title}</a>`; });
         customLinksHTML += '</div>';
       }
       dom.innerHTML = `<div class="center-card-indv">
@@ -227,11 +237,11 @@
           <textarea id="f_bio">${data.bio||""}</textarea>
         </div>
         <div class="form-grp"><label>Redes Sociais</label>
-          <input id="f_instagram" placeholder="Instagram" value="${data.instagram||""}" style="margin-bottom:6px;" />
-          <input id="f_facebook" placeholder="Facebook" value="${data.facebook||""}" style="margin-bottom:6px;" />
-          <input id="f_twitter" placeholder="Twitter/X" value="${data.twitter||""}" style="margin-bottom:6px;" />
-          <input id="f_linkedin" placeholder="LinkedIn" value="${data.linkedin||""}" style="margin-bottom:6px;" />
-          <input id="f_website" placeholder="Site Pessoal" value="${data.website||""}" />
+          <input id="f_instagram" placeholder="Instagram (somente username ou link)" value="${data.instagram||""}" style="margin-bottom:6px;" />
+          <input id="f_facebook" placeholder="Facebook (somente username ou link)" value="${data.facebook||""}" style="margin-bottom:6px;" />
+          <input id="f_twitter" placeholder="Twitter/X (somente username ou link)" value="${data.twitter||""}" style="margin-bottom:6px;" />
+          <input id="f_linkedin" placeholder="LinkedIn (somente username ou link)" value="${data.linkedin||""}" style="margin-bottom:6px;" />
+          <input id="f_website" placeholder="Site Pessoal (URL completo ou sem http)" value="${data.website||""}" />
         </div>
         <div class="form-grp"><label>Links Personalizados</label>
           <div class="custom-links" id="custom-links">`;
