@@ -9,6 +9,8 @@ on:
 
 jobs:
   build-and-deploy:
+    permissions:
+      contents: write # Permissão para a action fazer push para a branch gh-pages
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
