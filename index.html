@@ -60,6 +60,20 @@
     .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px; }
     .notfound { color:#fff; text-align:center; font-size:1.3em; }
     /* Spinner e Animações */
+    .indv-additional-images {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+      width: 100%;
+      align-items: center; /* Center images if they are smaller than 100% */
+    }
+    .indv-additional-images img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px; /* Rounded corners for additional images */
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
     .spinner { width: 50px; height: 50px; border: 5px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -148,6 +162,14 @@
         palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank" rel="noreferrer">${lk.title}</a>`; });
         customLinksHTML += '</div>';
       }
+      let additionalImagesHTML = '';
+      if (palhaco.additionalImages && palhaco.additionalImages.length) {
+        additionalImagesHTML = '<div class="indv-additional-images">';
+        palhaco.additionalImages.forEach(imgUrl => {
+          additionalImagesHTML += `<img src="${imgUrl}" alt="Imagem adicional" onerror="this.style.display='none';" />`;
+        });
+        additionalImagesHTML += '</div>';
+      }
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
       let backgroundStyle = '';
       let nameColorStyle = '';
@@ -164,8 +186,12 @@
           <div class="indv-role" ${roleColorStyle}>${palhaco.jobTitle ?? ''}</div>
           <div class="indv-bio">${palhaco.bio ?? ''}</div>
           <div class="soc-icons">${socIcons}</div>
+          ${additionalImagesHTML}
           ${customLinksHTML}
           <div class="ndp-logo">Narizes de Plantão 🎪</div>
+          <a href="https://instagram.com/narizesdeplantao_" target="_blank" rel="noreferrer" class="project-instagram-link">
+            <i class="fab fa-instagram"></i> @narizesdeplantao_
+          </a>
         </div>
       </div>`;
     }
@@ -239,7 +265,7 @@
 
     window.showEditModal = async function (key) {
       document.getElementById('modal-bg').classList.add('active');
-      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12" };
+      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12", additionalImages: [] };
       let isEdit = false;
       if (key) {
         const ref = doc(db, "palhacos", key);
@@ -266,7 +292,7 @@
         <div class="form-grp"><label>Foto - Escolher arquivo ou URL *</label>
           <input type="file" id="f_photo_file" accept="image/*" />
           <input required id="f_photo" value="${data.photo||""}" placeholder="URL da foto" style="margin-top:10px;" />
-          <img src="${data.photo||''}" id="photo-preview" ${data.photo ? '' : 'style="display:none;"'} onerror="this.style.display='none';" style="width:70px;height:70px; border-radius:50%; background:#eee;margin-top:7px; object-fit:cover;" />
+          <img src="${data.photo||''}" id="photo-preview" style="width:70px; height:70px; border-radius:50%; background:#eee; margin-top:7px; object-fit:cover; ${data.photo ? '' : 'display:none;'}" onerror="this.style.display='none';" />
         </div>
         <div class="form-grp"><label>Cargo/Função</label>
           <input id="f_role" value="${data.jobTitle||""}" />
@@ -288,6 +314,11 @@
             <div id="gradient-preview" style="width: 60px; height: 30px; border-radius: 8px; border: 1px solid #ccc; flex-shrink: 0;"></div>
           </div>
           <div style="font-size:0.9em;color:#888;margin-top:3px;">Deixe como está para usar o padrão laranja.</div>
+        </div>
+
+        <div class="form-grp"><label>Imagens Adicionais (até 5)</label>
+          <div id="additional-photos-container"></div>
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">URLs de imagens que aparecerão no corpo do cartão.</div>
         </div>
 
         <div class="form-grp"><label>Links Personalizados</label>
@@ -322,6 +353,25 @@
       document.getElementById('f_color1').oninput = updateGradientPreview;
       document.getElementById('f_color2').oninput = updateGradientPreview;
       // Upload Handler
+
+      // Additional Photos Handler
+      const additionalPhotosContainer = document.getElementById('additional-photos-container');
+      for (let i = 0; i < 5; i++) {
+        const photoUrl = data.additionalImages && data.additionalImages[i] ? data.additionalImages[i] : '';
+        const div = document.createElement('div');
+        div.style.marginBottom = '10px';
+        div.innerHTML = `
+          <input type="url" id="f_extra_photo_${i}" value="${photoUrl}" placeholder="URL da Imagem ${i + 1}" style="margin-bottom:5px;" />
+          <img id="extra_photo_preview_${i}" src="${photoUrl}" style="width:70px; height:70px; border-radius:8px; background:#eee; object-fit:cover; ${photoUrl ? '' : 'display:none;'}" onerror="this.style.display='none';" />
+        `;
+        additionalPhotosContainer.appendChild(div);
+
+        document.getElementById(`f_extra_photo_${i}`).oninput = function() {
+          const preview = document.getElementById(`extra_photo_preview_${i}`);
+          preview.src = this.value;
+          preview.style.display = this.value ? 'block' : 'none';
+        };
+      }
       document.getElementById('f_photo_file').onchange = async function(e){
         const file = e.target.files[0];
         if (!file) return;
@@ -362,6 +412,14 @@
           const url = row.children[1].value.trim();
           if(title && url) customLinks.push({title,url});
         });
+
+        let additionalImages = [];
+        for (let i = 0; i < 5; i++) {
+          const imgUrl = document.getElementById(`f_extra_photo_${i}`).value.trim();
+          if (imgUrl) {
+            additionalImages.push(imgUrl);
+          }
+        }
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
@@ -372,8 +430,9 @@
           linkedin: f_linkedin.value,
           website: f_website.value,
           customLinks,
-          color1: f_color1.value,
-          color2: f_color2.value
+          color1: f_color1.value, // Cor 1 do degradê
+          color2: f_color2.value, // Cor 2 do degradê
+          additionalImages // Novas imagens adicionais
         };
         submitBtn.disabled = true;
         submitBtn.innerText = "Salvando...";
