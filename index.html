@@ -150,14 +150,18 @@
       }
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
       let backgroundStyle = '';
+      let nameColorStyle = '';
+      let roleColorStyle = '';
       if (palhaco.color1 && palhaco.color2) {
         backgroundStyle = `style="background: linear-gradient(135deg, ${palhaco.color1} 60%, ${palhaco.color2} 100%)"`;
+        nameColorStyle = `style="color: ${palhaco.color1}"`;
+        roleColorStyle = `style="color: ${palhaco.color2}"`;
       }
       dom.innerHTML = `<div class="center-card-indv" ${backgroundStyle}>
         <div class="indv-card">
           <img src="${palhaco.photo}" alt="palhaço" class="indv-photo" onerror="this.src='https://i.imgur.com/wIxRvus.png';" />
-          <div class="indv-name">${palhaco.name}</div>
-          <div class="indv-role">${palhaco.jobTitle ?? ''}</div>
+          <div class="indv-name" ${nameColorStyle}>${palhaco.name}</div>
+          <div class="indv-role" ${roleColorStyle}>${palhaco.jobTitle ?? ''}</div>
           <div class="indv-bio">${palhaco.bio ?? ''}</div>
           <div class="soc-icons">${socIcons}</div>
           ${customLinksHTML}
