@@ -140,21 +140,14 @@
   <div id="main"></div>
   <div class="modal-bg" id="modal-bg"></div>
 
+  <!-- Configuração do Firebase (carregada de um arquivo local não versionado) -->
+  <script src="firebase-config.js"></script>
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"; 
     import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
     import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-    const firebaseConfig = {
-      apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
-      authDomain: "cartoes-palhacos-app.firebaseapp.com",
-      projectId: "cartoes-palhacos-app",
-      storageBucket: "cartoes-palhacos-app.firebasestorage.app",
-      messagingSenderId: "455690604804",
-      appId: "1:455690604804:web:0b5a909a5ee2dec9e50051",
-      measurementId: "G-FC6MXKE9XC"
-    };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
