@@ -138,8 +138,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"; 
-    import { getFirestore, collection, getDocs, addDoc, doc, setDoc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
     const firebaseConfig = {
       apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
       authDomain: "cartoes-palhacos-app.firebaseapp.com",
@@ -740,8 +740,32 @@
     } 
     window.excluirPalhaco = async function (key) {
       if (confirm("Excluir este palhaço?")) {
-        await delPalhaco(key);
-        renderAdmin();
+        try {
+          // --- MELHORIA: Excluir imagens do Storage antes de apagar o documento ---
+          const palhacoRef = doc(db, "palhacos", key);
+          const palhacoSnap = await getDoc(palhacoRef);
+
+          if (palhacoSnap.exists()) {
+            const palhacoData = palhacoSnap.data();
+            const imagesToDelete = [];
+            if (palhacoData.photo) imagesToDelete.push(palhacoData.photo);
+            if (palhacoData.additionalImages) {
+              palhacoData.additionalImages.forEach(imgUrl => {
+                if (imgUrl) imagesToDelete.push(imgUrl);
+              });
+            }
+
+            // Deleta cada imagem do Storage
+            const deletePromises = imagesToDelete.map(url => deleteObject(stRef(storage, url)).catch(err => console.warn("Imagem não encontrada para deletar:", url)));
+            await Promise.all(deletePromises);
+          }
+
+          await delPalhaco(key); // Apaga o documento do Firestore
+          renderAdmin();
+        } catch (error) {
+          console.error("Erro ao excluir palhaço e suas imagens:", error);
+          alert("Ocorreu um erro ao excluir o palhaço.");
+        }
       }
     }
     window.logout = function () { signOut(auth); }
