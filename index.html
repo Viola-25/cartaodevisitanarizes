@@ -419,10 +419,17 @@
     window.showQRCodeModal = function(url) {
       const modalBg = document.getElementById('modal-bg');
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+      // --- NOVO: Extrai o ID do palhaço para o nome do arquivo ---
+      const palhacoId = new URL(url).searchParams.get('id') || 'cartao';
+      const filename = `qrcode-${palhacoId}.png`;
+
       const html = `<div class="modal-box" style="text-align: center;">
         <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
         <div class="modal-title">Compartilhe o Cartão</div>
         <img src="${qrUrl}" alt="QR Code" style="border-radius: 10px; margin-bottom: 16px;" />
+        <a href="${qrUrl}" download="${filename}" class="btn accent" style="display: inline-block; text-decoration: none; margin-bottom: 16px;">
+          <i class="fa fa-download"></i> Baixar Imagem
+        </a>
         <p style="font-size: 0.9em; color: #666; word-break: break-all;">${url}</p>
       </div>`;
 
