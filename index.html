@@ -703,6 +703,16 @@
           sectionOrder.push(section.dataset.sectionId);
         });
 
+        // --- MELHORIA: Deletar imagens que foram removidas do formulário ---
+        if (isEdit) {
+          const originalImages = data.additionalImages || [];
+          const imagesToDelete = originalImages.filter(url => url && !additionalImages.includes(url));
+          
+          const deletePromises = imagesToDelete.map(url => deleteObject(stRef(storage, url)).catch(err => console.warn("Imagem a ser deletada não foi encontrada:", url)));
+          await Promise.all(deletePromises);
+        }
+        // --- Fim da melhoria ---
+
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
