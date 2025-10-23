@@ -54,7 +54,14 @@
     }
     .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 60%, var(--secondary) 100%); padding: 20px 0; }
     .indv-card { background:#fff; border-radius:30px; padding:40px 32px; max-width:440px; width:96vw; box-shadow:0 8px 40px #00000033; display:flex; flex-direction:column; align-items:center; animation: fadeIn .5s ease; }
-    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; margin-bottom:16px; border:6px solid var(--background); }
+    /* --- NOVO: Wrapper para a foto com borda degradê --- */
+    .indv-photo-wrapper {
+      padding: 4px; /* Espessura da borda degradê */
+      border-radius: 50%;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary)); /* Degradê padrão */
+    }
+    .indv-photo { width:150px; height:150px; border-radius:50%; object-fit:cover; border:4px solid var(--background); display: block; }
     .indv-name { font-family:'Fredoka One', cursive; font-size:2em;  color:var(--primary); }
     .indv-role { color:var(--secondary); font-weight:700; margin-bottom:10px; font-size: 1.1em; }
     .indv-bio { margin:12px 0 24px 0; text-align:center;  font-size:1.07em; color:#555; max-width:360px; line-height: 1.5; }
@@ -230,14 +237,18 @@
       let backgroundStyle = '';
       let nameColorStyle = '';
       let roleColorStyle = '';
+      let photoBorderStyle = ''; // --- NOVO: Estilo para a borda da foto ---
       if (palhaco.color1 && palhaco.color2) {
         backgroundStyle = `style="background: linear-gradient(135deg, ${palhaco.color1} 60%, ${palhaco.color2} 100%)"`;
         nameColorStyle = `style="color: ${palhaco.color1}"`;
         roleColorStyle = `style="color: ${palhaco.color2}"`;
+        photoBorderStyle = `style="background: linear-gradient(135deg, ${palhaco.color1}, ${palhaco.color2})"`;
       }
       dom.innerHTML = `<div class="center-card-indv" ${backgroundStyle}>
         <div class="indv-card">
-          <img src="${palhaco.photo}" alt="palhaço" class="indv-photo" onerror="this.src='https://i.imgur.com/wIxRvus.png';" />
+          <div class="indv-photo-wrapper" ${photoBorderStyle}>
+            <img src="${palhaco.photo}" alt="palhaço" class="indv-photo" onerror="this.src='https://i.imgur.com/wIxRvus.png';" />
+          </div>
           <div class="indv-name" ${nameColorStyle}>${palhaco.name}</div>
           <div class="indv-role" ${roleColorStyle}>${palhaco.jobTitle ?? ''}</div>
           ${cardBodyHTML}
