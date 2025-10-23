@@ -240,7 +240,7 @@
       if (key) {
         const ref = doc(db, "palhacos", key);
         const snap = await getDoc(ref);
-        if (snap.exists()) { data = snap.data(); isEdit = true; }
+        if (snap.exists()) { data = { ...data, ...snap.data() }; isEdit = true; } // Merge fetched data with defaults
       }
       renderModalForm(data, isEdit, key);
     }
@@ -278,9 +278,10 @@
           <input id="f_website" placeholder="Site Pessoal (URL completo ou sem http)" value="${data.website||""}" />
         </div>
         <div class="form-grp"><label>Cores do Fundo do Cartão</label>
-          <div style="display:flex; gap: 20px; align-items:center;">
+          <div style="display:flex; gap: 15px; align-items:center; flex-wrap: wrap;">
             <div>Cor 1: <input type="color" id="f_color1" value="${data.color1 || '#E74C3C'}"></div>
             <div>Cor 2: <input type="color" id="f_color2" value="${data.color2 || '#F39C12'}"></div>
+            <div id="gradient-preview" style="width: 60px; height: 30px; border-radius: 8px; border: 1px solid #ccc; flex-shrink: 0;"></div>
           </div>
           <div style="font-size:0.9em;color:#888;margin-top:3px;">Deixe como está para usar o padrão laranja.</div>
         </div>
@@ -304,6 +305,18 @@
         <div id="form-err" style="color:#d00;margin-top:10px;"></div>
       </form>`;
       document.getElementById('modal-bg').innerHTML = `<div class="modal-box">${html}</div>`;
+
+      // Initialize and update gradient preview
+      const updateGradientPreview = () => {
+        const color1 = document.getElementById('f_color1').value;
+        const color2 = document.getElementById('f_color2').value;
+        document.getElementById('gradient-preview').style.background = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+      };
+
+      // Set initial preview and add event listeners
+      updateGradientPreview();
+      document.getElementById('f_color1').oninput = updateGradientPreview;
+      document.getElementById('f_color2').oninput = updateGradientPreview;
       // Upload Handler
       document.getElementById('f_photo_file').onchange = async function(e){
         const file = e.target.files[0];
