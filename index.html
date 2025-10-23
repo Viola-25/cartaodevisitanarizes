@@ -17,13 +17,14 @@
     .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px #0002; }
     .btn:disabled { opacity:0.6; cursor: not-allowed;}
     .container { max-width:560px; margin:24px auto 0; padding: 0 16px; }
-    .card-list { display:flex; flex-direction:column; gap:16px;}
-    .admin-card { background:var(--card); border-radius:var(--radius); box-shadow:0 4px 16px #E74C3C1A; padding:20px 16px; display:flex; gap:20px; align-items:center; animation: fadeIn .5s ease; }
+    /* --- MELHORIA: Layout em grade para o painel de admin --- */
+    .admin-container { max-width: 1200px; margin: 24px auto 0; padding: 0 16px; }
+    .card-list { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .admin-card { background:var(--card); border-radius:var(--radius); box-shadow:0 4px 16px #E74C3C1A; padding:20px; display:flex; flex-wrap: wrap; gap:20px; align-items:center; animation: fadeIn .5s ease; }
     .card-photo { width:82px; height:82px; border-radius:50%; object-fit:cover; background:#eee; flex-shrink:0;}
-    .card-info { flex:1; }
-    .card-actions { display:flex; gap:8px; }
-    .card-actions button { padding: 8px 14px; font-size: 0.9em; }
-    .copiar-link { background: var(--accent); margin-top: 6px; /* evita sobreposição com o link */ }
+    .card-info { flex: 1; min-width: 200px; }
+    .card-actions { display:flex; flex-direction: column; gap:8px; align-items: flex-start; }
+    .copiar-link { background: var(--accent); }
     .ok-copied { color:var(--accent); font-size:0.95em; margin-left:8px }
     .card-link { font-size: 0.9em; color: #555; background: #f4f4f4; padding: 4px 10px; border-radius: 8px; display: inline-block; word-break: break-all; margin-bottom: 8px; }
     .logout { background:#888; }
@@ -49,8 +50,13 @@
     @media (max-width:600px){
       .modal-box { max-width:100vw; width:97vw;}
       .header { font-size:1.8em; }
-      .admin-card { flex-direction: column; align-items: flex-start; }
-      .card-actions { flex-direction: column; width: 100%; gap: 6px; margin-top: 10px; }
+      .admin-card { flex-direction: column; align-items: flex-start; gap: 16px; }
+      .card-actions { width: 100%; }
+    }
+    /* --- MELHORIA: Grid em telas maiores --- */
+    @media (min-width: 900px) {
+      .card-list { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+      .card-actions { align-items: flex-end; }
     }
     .center-card-indv { min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, var(--primary) 60%, var(--secondary) 100%); padding: 20px 0; }
     .indv-card { background:#fff; border-radius:30px; padding:40px 32px; max-width:440px; width:96vw; box-shadow:0 8px 40px #00000033; display:flex; flex-direction:column; align-items:center; animation: fadeIn .5s ease; }
@@ -104,13 +110,14 @@
     .carousel-btn.next { right: 10px; }
     .carousel-btn:disabled { opacity: 0.3; cursor: default; }
     .project-instagram-link {
-      margin-top: 10px;
+      margin-top: 32px;
       color: #555;
       text-decoration: none;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      font-size: 1.1em;
       transition: color .2s;
     }
     .project-instagram-link:hover {
@@ -252,7 +259,6 @@
           <div class="indv-name" ${nameColorStyle}>${palhaco.name}</div>
           <div class="indv-role" ${roleColorStyle}>${palhaco.jobTitle ?? ''}</div>
           ${cardBodyHTML}
-          <div class="ndp-logo">Narizes de Plantão 🎪</div>
           <a href="https://instagram.com/narizesdeplantao_" target="_blank" rel="noreferrer" class="project-instagram-link">
             <i class="fab fa-instagram"></i> @narizesdeplantao_
           </a>
@@ -362,7 +368,7 @@
 
     async function renderAdmin() {
       const dom = document.getElementById('main');
-      dom.innerHTML = `<div class="container" style="text-align:center; padding-top: 40px;"><div class="spinner" style="margin:auto; border-color: #ccc; border-top-color: var(--primary);"></div></div>`;
+      dom.innerHTML = `<div class="admin-container" style="text-align:center; padding-top: 40px;"><div class="spinner" style="margin:auto; border-color: #ccc; border-top-color: var(--primary);"></div></div>`;
       const palhacos = await getPalhacos();
 
       let list = '';
@@ -376,14 +382,14 @@
             <img src="${p.photo}" class="card-photo" />
             <div class="card-info">
               <div style="font-weight:700;color:var(--primary);font-size:1.07em">${p.name}</div>
-              <div style="font-size:0.96em;color:var(--secondary);">${p.jobTitle ?? ''}</div>
+              <div style="font-size:0.96em;color:var(--secondary); margin-bottom: 8px;">${p.jobTitle ?? ''}</div>
               <div class="card-link">${shareLink}</div>
-              <button class="btn copiar-link" onclick="window.copyLink(this, '${shareLink}')">Copiar Link</button>
             </div>
             <div class="card-actions">
+              <button class="btn copiar-link" onclick="window.copyLink(this, '${shareLink}')"><i class="fa fa-copy"></i> Copiar Link</button>
               <button class="btn accent" onclick="window.open('?id=${p.id}','_blank')"><i class="fa fa-eye"></i> Ver Cartão</button>
               <button class="btn secondary" onclick="window.showEditModal('${p.key}')"><i class="fa fa-pen"></i> Editar</button>
-              <button class="btn logout" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
+              <button class="btn" style="background-color: #c0392b;" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
             </div>
           </div>`;
         });
@@ -391,7 +397,7 @@
       }
       dom.innerHTML = `
         <div class="header">Painel de Administração</div>  
-        <div class="container">
+        <div class="admin-container">
           <div class="admin-btns">
             <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo Palhaço</button>
             <button class="btn logout" onclick="window.logout()"><i class="fa fa-sign-out"></i> Sair</button>
