@@ -10,13 +10,21 @@ export const renderSpinner = (container, fullPage = false) => {
 };
 
 export function renderIndvCard(palhaco) {
-    let socIcons = '';
-    if (palhaco.instagram) socIcons += `<a href="${formatLink("https://instagram.com/", palhaco.instagram)}" target="_blank" rel="noreferrer"><i class="fab fa-instagram"></i></a>`;
-    if (palhaco.facebook) socIcons += `<a href="${formatLink("https://facebook.com/", palhaco.facebook)}" target="_blank" rel="noreferrer"><i class="fab fa-facebook"></i></a>`;
-    if (palhaco.twitter) socIcons += `<a href="${formatLink("https://x.com/", palhaco.twitter)}" target="_blank" rel="noreferrer"><i class="fab fa-x-twitter"></i></a>`;
-    if (palhaco.linkedin) socIcons += `<a href="${formatLink("https://linkedin.com/in/", palhaco.linkedin)}" target="_blank" rel="noreferrer"><i class="fab fa-linkedin"></i></a>`;
-    if (palhaco.website) socIcons += `<a href="${formatLink("", palhaco.website)}" target="_blank" rel="noreferrer"><i class="fas fa-globe"></i></a>`;
+    const socialLinksConfig = [
+        { key: 'instagram', base: 'https://instagram.com/', icon: 'fab fa-instagram' },
+        { key: 'facebook', base: 'https://facebook.com/', icon: 'fab fa-facebook' },
+        { key: 'twitter', base: 'https://x.com/', icon: 'fab fa-x-twitter' },
+        { key: 'linkedin', base: 'https://linkedin.com/in/', icon: 'fab fa-linkedin' },
+        { key: 'website', base: '', icon: 'fas fa-globe' }
+    ];
 
+    const socIcons = socialLinksConfig
+        .filter(item => palhaco[item.key])
+        .map(item => {
+            const url = formatLink(item.base, palhaco[item.key]);
+            return `<a href="${url}" target="_blank" rel="noreferrer"><i class="${item.icon}"></i></a>`;
+        }).join('');
+        
     let customLinksHTML = '';
     if (palhaco.customLinks && palhaco.customLinks.length) {
         customLinksHTML = `<div class="custom-links-indv">`;
