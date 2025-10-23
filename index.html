@@ -60,20 +60,46 @@
     .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px; }
     .notfound { color:#fff; text-align:center; font-size:1.3em; }
     /* Spinner e Animações */
-    /* --- NOVO: Grid para imagens adicionais --- */
+    /* --- NOVO: Estilos do Carrossel de Imagens --- */
     .indv-additional-images {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
+      position: relative;
       margin-top: 20px;
       width: 100%;
+      max-width: 300px; /* Define um tamanho máximo para o carrossel */
+      margin-left: auto;
+      margin-right: auto;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .carousel-track {
+      display: flex;
+      transition: transform 0.4s ease-in-out;
     }
     .indv-additional-images img {
       width: 100%;
+      flex-shrink: 0;
       aspect-ratio: 1 / 1; /* Imagens quadradas */
       object-fit: cover;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .carousel-btn {
+      position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2em; cursor: pointer; display: none; /* Inicia escondido */
+    }
+    .carousel-btn.prev { left: 10px; }
+    .carousel-btn.next { right: 10px; }
+    .carousel-btn:disabled { opacity: 0.3; cursor: default; }
+    .project-instagram-link {
+      margin-top: 10px;
+      color: #555;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: color .2s;
+    }
+    .project-instagram-link:hover {
+      color: var(--primary);
     }
     .spinner { width: 50px; height: 50px; border: 5px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -165,11 +191,18 @@
       }
       let additionalImagesHTML = '';
       if (palhaco.additionalImages && palhaco.additionalImages.length) {
-        additionalImagesHTML = '<div class="indv-additional-images">';
-        palhaco.additionalImages.filter(imgUrl => imgUrl).forEach(imgUrl => { // Filtra URLs vazias
-          additionalImagesHTML += `<img src="${imgUrl}" alt="Imagem adicional" onerror="this.style.display='none';" />`;
-        });
-        additionalImagesHTML += '</div>';
+        const images = palhaco.additionalImages.filter(imgUrl => imgUrl); // Filtra URLs vazias
+        if (images.length > 0) {
+          additionalImagesHTML = `<div class="indv-additional-images" id="image-carousel">
+            <div class="carousel-track">`;
+          images.forEach(imgUrl => {
+            additionalImagesHTML += `<img src="${imgUrl}" alt="Imagem adicional" onerror="this.style.display='none';" />`;
+          });
+          additionalImagesHTML += `</div>
+            <button class="carousel-btn prev" id="carousel-prev">&lt;</button>
+            <button class="carousel-btn next" id="carousel-next">&gt;</button>
+          </div>`;
+        }
       }
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
       let backgroundStyle = '';
@@ -195,6 +228,41 @@
           </a>
         </div>
       </div>`;
+      // --- NOVO: Inicializa o carrossel após renderizar o HTML ---
+      initCarousel();
+    }
+
+    function initCarousel() {
+      const carousel = document.getElementById('image-carousel');
+      if (!carousel) return;
+
+      const track = carousel.querySelector('.carousel-track');
+      const slides = Array.from(track.children);
+      const nextButton = document.getElementById('carousel-next');
+      const prevButton = document.getElementById('carousel-prev');
+      const slideWidth = slides[0].getBoundingClientRect().width;
+      let currentIndex = 0;
+
+      if (slides.length <= 1) return; // Não faz nada se tiver 1 ou 0 imagens
+
+      nextButton.style.display = 'block';
+      prevButton.style.display = 'block';
+
+      const updateButtons = () => {
+        prevButton.disabled = currentIndex === 0;
+        nextButton.disabled = currentIndex === slides.length - 1;
+      };
+
+      const moveToSlide = (targetIndex) => {
+        track.style.transform = 'translateX(-' + slideWidth * targetIndex + 'px)';
+        currentIndex = targetIndex;
+        updateButtons();
+      };
+
+      prevButton.addEventListener('click', () => moveToSlide(currentIndex - 1));
+      nextButton.addEventListener('click', () => moveToSlide(currentIndex + 1));
+
+      updateButtons();
     }
 
     function renderLogin() {
@@ -287,7 +355,7 @@
           <input required id="f_nome" value="${data.name||""}" />
         </div>
         <div class="form-grp"><label>ID Único *</label>
-          <input required id="f_id" value="${data.id||""}" pattern="[a-z0-9-]+" />
+          <input required id="f_id" value="${data.id||""}" pattern="[a-z0-9\\-]+" />
           <div style="font-size:0.9em;color:#888;margin-top:3px;">Link: <b>?id=${data.id||""}</b> (letras minúsculas, números, hífen)</div>
         </div>
         <div class="form-grp"><label>Foto - Escolher arquivo ou URL *</label>
@@ -456,7 +524,7 @@
         const id = f_id.value.trim().toLowerCase();
         const photo = f_photo.value.trim();
         if (!name || !id || !photo) { formErr("Campos obrigatórios!"); return;}
-        if (!id.match(/^[a-z0-9-]+$/)) { formErr("ID inválido! Use letras minúsculas, números, hífen."); return; }
+        if (!id.match(/^[a-z0-9\-]+$/)) { formErr("ID inválido! Use letras minúsculas, números, hífen."); return; }
         let allPalhacos = await getPalhacos();
         if ((!isEdit || key===undefined) && allPalhacos.find(x=>x.id===id)) { formErr("ID já existe!"); return; }
         let customLinks = [];
