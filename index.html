@@ -138,7 +138,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"; 
-    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
     import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
     const firebaseConfig = {
       apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
@@ -175,8 +175,6 @@
     }
     async function getById(id) {
       // --- MELHORIA: Usar 'where' para buscar diretamente no banco de dados ---
-      // Isso é muito mais eficiente do que baixar todos os documentos.
-      const { where } = await import("https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js");
       const palhacosRef = collection(db, "palhacos");
       const q = query(palhacosRef, where("id", "==", id));
       const querySnapshot = await getDocs(q);
@@ -378,45 +376,45 @@
         list = '<div class="card-list">';
         palhacos.forEach(p => {
           const shareLink = `${window.location.origin}${window.location.pathname}?id=${p.id}`;
-          list += `<div class="admin-card">
+            list += `<div class="admin-card" data-key="${p.key}">
             <img src="${p.photo}" class="card-photo" />
             <div class="card-info">
               <div style="font-weight:700;color:var(--primary);font-size:1.07em">${p.name}</div>
               <div style="font-size:0.96em;color:var(--secondary); margin-bottom: 8px;">${p.jobTitle ?? ''}</div>
               <div class="card-link">${shareLink}</div>
             </div>
-            <div class="card-actions">
-              <button class="btn copiar-link" onclick="window.copyLink(this, '${shareLink}')"><i class="fa fa-copy"></i> Copiar Link</button>
-              <button class="btn accent" onclick="window.open('?id=${p.id}','_blank')"><i class="fa fa-eye"></i> Ver Cartão</button>
-              <button class="btn" style="background-color: #95a5a6;" onclick="window.showQRCodeModal('${shareLink}')"><i class="fa fa-qrcode"></i> QR Code</button>
-              <button class="btn secondary" onclick="window.showEditModal('${p.key}')"><i class="fa fa-pen"></i> Editar</button>
-              <button class="btn" style="background-color: #c0392b;" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
+              <div class="card-actions" data-share-link="${shareLink}" data-key="${p.key}" data-id="${p.id}">
+                <button class="btn copiar-link"><i class="fa fa-copy"></i> Copiar Link</button>
+                <button class="btn accent"><i class="fa fa-eye"></i> Ver Cartão</button>
+                <button class="btn" style="background-color: #95a5a6;"><i class="fa fa-qrcode"></i> QR Code</button>
+                <button class="btn secondary"><i class="fa fa-pen"></i> Editar</button>
+                <button class="btn" style="background-color: #c0392b;"><i class="fa fa-trash"></i> Excluir</button>
             </div>
           </div>`;
         });
         list += "</div>";
       }
       dom.innerHTML = `
-        <div class="header">Painel de Administração</div>  
+        <div class="header">Painel de Administração</div>
         <div class="admin-container">
-          <div class="admin-btns">
-            <button class="btn accent" onclick="window.showEditModal()">➕ Adicionar Novo Palhaço</button>
-            <button class="btn logout" onclick="window.logout()"><i class="fa fa-sign-out"></i> Sair</button>
+          <div class="admin-btns" data-action-group="admin-main">
+            <button class="btn accent" data-action="add-new">➕ Adicionar Novo Palhaço</button>
+            <button class="btn logout" data-action="logout"><i class="fa fa-sign-out"></i> Sair</button>
           </div>
           <div>${list}</div>
         </div>
       `;
     }
 
-    window.copyLink = function(btn, link) {
+    function copyLink(btn, link) {
       navigator.clipboard.writeText(link);
       const originalText = btn.innerHTML;
       btn.innerHTML = 'Copiado!';
       btn.classList.add('copied');
       setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('copied'); }, 2000);
     }
-
-    window.showQRCodeModal = function(url) {
+    
+    function showQRCodeModal(url) {
       const modalBg = document.getElementById('modal-bg');
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
       // --- NOVO: Extrai o ID do palhaço para o nome do arquivo ---
@@ -424,7 +422,7 @@
       const filename = `qrcode-${palhacoId}.png`;
 
       const html = `<div class="modal-box" style="text-align: center;">
-        <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
+        <button type="button" class="close-modal" data-action="close-modal">&times;</button>
         <div class="modal-title">Compartilhe o Cartão</div>
         <img src="${qrUrl}" alt="QR Code" style="border-radius: 10px; margin-bottom: 16px;" />
         <a href="${qrUrl}" download="${filename}" class="btn accent" style="display: inline-block; text-decoration: none; margin-bottom: 16px;">
@@ -437,7 +435,7 @@
       modalBg.classList.add('active');
     }
 
-    window.showEditModal = async function (key) {
+    async function showEditModal(key) {
       document.getElementById('modal-bg').classList.add('active');
       let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12", additionalImages: ["","","",""], sectionOrder: ['bio', 'social', 'images', 'links'] };
       let isEdit = false;
@@ -448,13 +446,13 @@
       }
       renderModalForm(data, isEdit, key);
     }
-    window.closeModal = function () {
+    function closeModal() {
       document.getElementById('modal-bg').classList.remove('active');
       setTimeout(()=>document.getElementById('modal-bg').innerHTML='', 150);
     }
     function renderModalForm(data, isEdit, key) {
-      let html = `<form id="palhacoForm" autocomplete="off">
-        <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
+      let html = `<form id="palhacoForm" autocomplete="off" data-key="${key || ''}">
+        <button type="button" class="close-modal" data-action="close-modal">&times;</button>
         <div class="modal-title">${isEdit ? "Editar Palhaço" : "Adicionar Novo Palhaço"}</div>
         <div class="form-grp"><label>Nome do Palhaço *</label>
           <input required id="f_nome" value="${data.name||""}" />
@@ -485,7 +483,7 @@
         </div>
 
         <div style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end;">
-          <button type="button" class="btn secondary" onclick="window.closeModal()">Cancelar</button>
+          <button type="button" class="btn secondary" data-action="close-modal">Cancelar</button>
           <button type="submit" class="btn" style="background:#27ae60;">Salvar</button>
         </div>
         <div id="form-err" style="color:#d00;margin-top:10px;"></div>
@@ -517,7 +515,7 @@
         links: `<div class="form-grp form-section" data-section-id="links" draggable="true">
                   <div class="form-section-header"><i class="fa fa-grip-vertical"></i><label>Links Personalizados</label></div>
                   <div class="custom-links" id="custom-links"></div>
-                  <button type="button" class="btn accent" onclick="addCustomLink()" style="padding: 8px 16px; font-size: 0.9em; margin-top: 8px;">+ Adicionar Link</button>
+                  <button type="button" class="btn accent" data-action="add-custom-link" style="padding: 8px 16px; font-size: 0.9em; margin-top: 8px;">+ Adicionar Link</button>
                 </div>`
       };
 
@@ -735,20 +733,20 @@
         } else {
           await createPalhaco(obj);
         }
-        window.closeModal();
+        closeModal();
         // Pequeno delay para garantir que o usuário veja a transição
         setTimeout(renderAdmin, 100);
         renderAdmin();
       }
     }
     function formErr(msg){ document.getElementById('form-err').innerText = msg; }
-    window.addCustomLink = function () {
+    function addCustomLink() {
       const c = document.createElement('div');
       c.className="custom-link-row";
       c.innerHTML = `<input placeholder="Título do Link" /> <input placeholder="URL completa (https://...)" /> <button type="button" class="btn-icon btn-danger" onclick="this.parentElement.remove()">×</button>`;
       document.getElementById('custom-links').appendChild(c);
     } 
-    window.excluirPalhaco = async function (key) {
+    async function excluirPalhaco(key) {
       if (confirm("Excluir este palhaço?")) {
         try {
           // --- MELHORIA: Excluir imagens do Storage antes de apagar o documento ---
@@ -771,7 +769,16 @@
           }
 
           await delPalhaco(key); // Apaga o documento do Firestore
-          renderAdmin();
+          // Otimização: Em vez de recarregar tudo, apenas remove o card do DOM.
+          const cardElement = document.querySelector(`.admin-card[data-key="${key}"]`);
+          if (cardElement) {
+            cardElement.style.transition = 'opacity 0.5s, transform 0.5s';
+            cardElement.style.opacity = '0';
+            cardElement.style.transform = 'scale(0.9)';
+            setTimeout(() => cardElement.remove(), 500);
+          } else {
+            renderAdmin(); // Fallback se o elemento não for encontrado
+          }
         } catch (error) {
           console.error("Erro ao excluir palhaço e suas imagens:", error);
           alert("Ocorreu um erro ao excluir o palhaço.");
@@ -779,6 +786,7 @@
       }
     }
     window.logout = function () { signOut(auth); }
+    function logout() { signOut(auth); }
 
     onAuthStateChanged(auth, (user) => {
       const idParam = getParamId();
@@ -786,7 +794,33 @@
       else if (user) renderAdmin();
       else renderLogin();
     });
-    document.getElementById('modal-bg').onclick = function (e) { if (e.target === this) window.closeModal(); }
+
+    // Otimização: Delegação de Eventos
+    document.body.addEventListener('click', (e) => {
+      const target = e.target;
+      const closestAction = target.closest('[data-action]');
+      const finalAction = closestAction ? closestAction.dataset.action : null;
+
+      if (finalAction === 'close-modal') {
+        closeModal();
+      } else if (finalAction === 'add-new') {
+        showEditModal();
+      } else if (finalAction === 'logout') {
+        logout();
+      } else if (finalAction === 'add-custom-link') {
+        addCustomLink();
+      }
+
+      const actionsContainer = target.closest('.card-actions');
+      if (actionsContainer) {
+        if (target.closest('.copiar-link')) copyLink(target.closest('.copiar-link'), actionsContainer.dataset.shareLink);
+        if (target.closest('.accent')) window.open(`?id=${actionsContainer.dataset.id}`, '_blank');
+        if (target.closest('[style*="95a5a6"]')) showQRCodeModal(actionsContainer.dataset.shareLink);
+        if (target.closest('.secondary')) showEditModal(actionsContainer.dataset.key);
+        if (target.closest('[style*="c0392b"]')) excluirPalhaco(actionsContainer.dataset.key);
+      }
+    });
+    document.getElementById('modal-bg').onclick = function (e) { if (e.target === this) closeModal(); }
   </script>
 </body>
 </html>
