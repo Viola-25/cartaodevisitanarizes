@@ -83,7 +83,7 @@
       object-fit: cover;
     }
     .carousel-btn {
-      position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 1.2em; cursor: pointer; display: none; /* Inicia escondido */
+      position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s;
     }
     .carousel-btn.prev { left: 10px; }
     .carousel-btn.next { right: 10px; }
@@ -199,8 +199,8 @@
             additionalImagesHTML += `<img src="${imgUrl}" alt="Imagem adicional" onerror="this.style.display='none';" />`;
           });
           additionalImagesHTML += `</div>
-            <button class="carousel-btn prev" id="carousel-prev">&lt;</button>
-            <button class="carousel-btn next" id="carousel-next">&gt;</button>
+            <button class="carousel-btn prev" id="carousel-prev"><i class="fa fa-chevron-left"></i></button>
+            <button class="carousel-btn next" id="carousel-next"><i class="fa fa-chevron-right"></i></button>
           </div>`;
         }
       }
@@ -240,22 +240,69 @@
       const slides = Array.from(track.children);
       const nextButton = document.getElementById('carousel-next');
       const prevButton = document.getElementById('carousel-prev');
+      
+      if (slides.length <= 1) return; // Não faz nada se tiver 1 ou 0 imagens
+      
       const slideWidth = slides[0].getBoundingClientRect().width;
       let currentIndex = 0;
+      
+      // --- Lógica de arrastar/swipe ---
+      let isDragging = false, startPos = 0, currentTranslate = 0, prevTranslate = 0;
 
-      if (slides.length <= 1) return; // Não faz nada se tiver 1 ou 0 imagens
+      const getPositionX = e => e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
 
-      nextButton.style.display = 'block';
-      prevButton.style.display = 'block';
+      const dragStart = (e) => {
+        isDragging = true;
+        startPos = getPositionX(e);
+        track.style.transition = 'none'; // Desativa a transição durante o arrasto
+        carousel.style.cursor = 'grabbing';
+      };
+
+      const dragging = (e) => {
+        if (!isDragging) return;
+        const currentPosition = getPositionX(e);
+        currentTranslate = prevTranslate + currentPosition - startPos;
+        track.style.transform = `translateX(${currentTranslate}px)`;
+      };
+
+      const dragEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        track.style.transition = 'transform 0.4s ease-in-out'; // Reativa a transição
+        carousel.style.cursor = 'grab';
+        const movedBy = currentTranslate - prevTranslate;
+
+        // Move para o próximo/anterior se o swipe for maior que 50px
+        if (movedBy < -50 && currentIndex < slides.length - 1) currentIndex++;
+        if (movedBy > 50 && currentIndex > 0) currentIndex--;
+
+        moveToSlide(currentIndex);
+      };
+
+      // Adiciona os eventos de toque e mouse
+      carousel.addEventListener('mousedown', dragStart);
+      carousel.addEventListener('touchstart', dragStart);
+      carousel.addEventListener('mouseup', dragEnd);
+      carousel.addEventListener('touchend', dragEnd);
+      carousel.addEventListener('mouseleave', dragEnd);
+      carousel.addEventListener('mousemove', dragging);
+      carousel.addEventListener('touchmove', dragging);
+      // --- Fim da lógica de arrastar ---
+
+      // Mostra as setas
+      nextButton.style.opacity = '1';
+      prevButton.style.opacity = '1';
 
       const updateButtons = () => {
         prevButton.disabled = currentIndex === 0;
         nextButton.disabled = currentIndex === slides.length - 1;
       };
 
-      const moveToSlide = (targetIndex) => {
-        track.style.transform = 'translateX(-' + slideWidth * targetIndex + 'px)';
-        currentIndex = targetIndex;
+      const moveToSlide = (index) => {
+        currentTranslate = -index * slideWidth;
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        prevTranslate = currentTranslate;
+        currentIndex = index;
         updateButtons();
       };
 
