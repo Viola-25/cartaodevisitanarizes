@@ -1,6 +1,6 @@
 // Este arquivo NÃO deve ser enviado para o GitHub.
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY_REAL_AQUI",
+  apiKey: "AIzaSyDqPIO6qgLQSG_p5Vg2z5qRVJfQqiK282s",
   authDomain: "cartoes-palhacos-app.firebaseapp.com",
   projectId: "cartoes-palhacos-app",
   storageBucket: "cartoes-palhacos-app.firebasestorage.app",
