@@ -60,18 +60,19 @@
     .ndp-logo { margin-top:18px; font-size:1em; color:#222b; letter-spacing:1px; }
     .notfound { color:#fff; text-align:center; font-size:1.3em; }
     /* Spinner e Animações */
+    /* --- NOVO: Grid para imagens adicionais --- */
     .indv-additional-images {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 10px;
       margin-top: 20px;
       width: 100%;
-      align-items: center; /* Center images if they are smaller than 100% */
     }
     .indv-additional-images img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 10px; /* Rounded corners for additional images */
+      width: 100%;
+      aspect-ratio: 1 / 1; /* Imagens quadradas */
+      object-fit: cover;
+      border-radius: 12px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
     .spinner { width: 50px; height: 50px; border: 5px solid #fff3; border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -165,7 +166,7 @@
       let additionalImagesHTML = '';
       if (palhaco.additionalImages && palhaco.additionalImages.length) {
         additionalImagesHTML = '<div class="indv-additional-images">';
-        palhaco.additionalImages.forEach(imgUrl => {
+        palhaco.additionalImages.filter(imgUrl => imgUrl).forEach(imgUrl => { // Filtra URLs vazias
           additionalImagesHTML += `<img src="${imgUrl}" alt="Imagem adicional" onerror="this.style.display='none';" />`;
         });
         additionalImagesHTML += '</div>';
@@ -265,7 +266,7 @@
 
     window.showEditModal = async function (key) {
       document.getElementById('modal-bg').classList.add('active');
-      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12", additionalImages: [] };
+      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12", additionalImages: ["","","",""] };
       let isEdit = false;
       if (key) {
         const ref = doc(db, "palhacos", key);
@@ -316,9 +317,9 @@
           <div style="font-size:0.9em;color:#888;margin-top:3px;">Deixe como está para usar o padrão laranja.</div>
         </div>
 
-        <div class="form-grp"><label>Imagens Adicionais (até 5)</label>
+        <div class="form-grp"><label>Imagens Adicionais (até 4)</label>
           <div id="additional-photos-container"></div>
-          <div style="font-size:0.9em;color:#888;margin-top:3px;">URLs de imagens que aparecerão no corpo do cartão.</div>
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">Arraste para reordenar as imagens.</div>
         </div>
 
         <div class="form-grp"><label>Links Personalizados</label>
@@ -353,25 +354,77 @@
       document.getElementById('f_color1').oninput = updateGradientPreview;
       document.getElementById('f_color2').oninput = updateGradientPreview;
       // Upload Handler
-
-      // Additional Photos Handler
+      
+      // --- NOVO: Lógica para Imagens Adicionais com Upload e Drag-n-Drop ---
       const additionalPhotosContainer = document.getElementById('additional-photos-container');
-      for (let i = 0; i < 5; i++) {
-        const photoUrl = data.additionalImages && data.additionalImages[i] ? data.additionalImages[i] : '';
+      for (let i = 0; i < 4; i++) {
+        const photoUrl = (data.additionalImages && data.additionalImages[i]) ? data.additionalImages[i] : '';
         const div = document.createElement('div');
-        div.style.marginBottom = '10px';
+        div.className = 'additional-photo-row';
+        div.draggable = true;
+        div.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:10px; padding:8px; border:1px solid #eee; border-radius:8px; cursor:grab;';
         div.innerHTML = `
-          <input type="url" id="f_extra_photo_${i}" value="${photoUrl}" placeholder="URL da Imagem ${i + 1}" style="margin-bottom:5px;" />
-          <img id="extra_photo_preview_${i}" src="${photoUrl}" style="width:70px; height:70px; border-radius:8px; background:#eee; object-fit:cover; ${photoUrl ? '' : 'display:none;'}" onerror="this.style.display='none';" />
+          <i class="fa fa-grip-vertical" style="color:#aaa;"></i>
+          <img id="extra_photo_preview_${i}" src="${photoUrl}" style="width:50px; height:50px; border-radius:8px; background:#eee; object-fit:cover; ${photoUrl ? '' : 'display:none;'}" onerror="this.style.display='none';" />
+          <div style="flex:1;">
+            <input type="file" id="f_extra_photo_file_${i}" accept="image/*" style="display:none;" />
+            <button type="button" onclick="document.getElementById('f_extra_photo_file_${i}').click()" class="btn" style="padding: 5px 10px; font-size:0.8em;">Escolher</button>
+            <span id="upload_status_${i}" style="font-size:0.8em; color:#888; margin-left:5px;"></span>
+            <input type="hidden" id="f_extra_photo_url_${i}" value="${photoUrl}" />
+          </div>
+          <button type="button" onclick="this.closest('.additional-photo-row').querySelector('input[type=hidden]').value=''; this.closest('.additional-photo-row').querySelector('img').style.display='none';" style="background:none;border:none;color:#d00;font-size:1.1em;cursor:pointer;">&times;</button>
         `;
         additionalPhotosContainer.appendChild(div);
 
-        document.getElementById(`f_extra_photo_${i}`).oninput = function() {
-          const preview = document.getElementById(`extra_photo_preview_${i}`);
-          preview.src = this.value;
-          preview.style.display = this.value ? 'block' : 'none';
+        document.getElementById(`f_extra_photo_file_${i}`).onchange = function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+          const statusEl = document.getElementById(`upload_status_${i}`);
+          statusEl.textContent = 'Enviando...';
+          const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`; 
+          const storageRef = stRef(storage, 'palhacos_extra/' + fileName);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+          uploadTask.on('state_changed', 
+            (snapshot) => {},
+            (error) => { statusEl.textContent = "Erro!"; },
+            async () => {
+              const url = await getDownloadURL(storageRef);
+              document.getElementById(`f_extra_photo_url_${i}`).value = url;
+              const preview = document.getElementById(`extra_photo_preview_${i}`);
+              preview.src = url;
+              preview.style.display = 'block';
+              statusEl.textContent = 'Enviado!';
+              setTimeout(() => statusEl.textContent = '', 2000);
+            }
+          );
         };
       }
+
+      // Drag and Drop Logic
+      let draggingElement = null;
+      additionalPhotosContainer.addEventListener('dragstart', e => {
+        draggingElement = e.target.closest('.additional-photo-row');
+        draggingElement.style.opacity = '0.5';
+      });
+      additionalPhotosContainer.addEventListener('dragover', e => {
+        e.preventDefault();
+        const target = e.target.closest('.additional-photo-row');
+        if (target && target !== draggingElement) {
+          const rect = target.getBoundingClientRect();
+          const next = (e.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+          additionalPhotosContainer.insertBefore(draggingElement, next && target.nextSibling || target);
+        }
+      });
+      additionalPhotosContainer.addEventListener('dragend', e => {
+        if (draggingElement) {
+          draggingElement.style.opacity = '1';
+          draggingElement = null;
+        }
+      });
+      additionalPhotosContainer.addEventListener('drop', e => {
+        e.preventDefault();
+      });
+
       document.getElementById('f_photo_file').onchange = async function(e){
         const file = e.target.files[0];
         if (!file) return;
@@ -414,12 +467,12 @@
         });
 
         let additionalImages = [];
-        for (let i = 0; i < 5; i++) {
-          const imgUrl = document.getElementById(`f_extra_photo_${i}`).value.trim();
-          if (imgUrl) {
-            additionalImages.push(imgUrl);
-          }
-        }
+        const rows = document.querySelectorAll('.additional-photo-row');
+        rows.forEach(row => {
+          const urlInput = row.querySelector('input[type=hidden]');
+          additionalImages.push(urlInput.value.trim());
+        });
+
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
