@@ -388,6 +388,7 @@
             <div class="card-actions">
               <button class="btn copiar-link" onclick="window.copyLink(this, '${shareLink}')"><i class="fa fa-copy"></i> Copiar Link</button>
               <button class="btn accent" onclick="window.open('?id=${p.id}','_blank')"><i class="fa fa-eye"></i> Ver Cartão</button>
+              <button class="btn" style="background-color: #95a5a6;" onclick="window.showQRCodeModal('${shareLink}')"><i class="fa fa-qrcode"></i> QR Code</button>
               <button class="btn secondary" onclick="window.showEditModal('${p.key}')"><i class="fa fa-pen"></i> Editar</button>
               <button class="btn" style="background-color: #c0392b;" onclick="window.excluirPalhaco('${p.key}')"><i class="fa fa-trash"></i> Excluir</button>
             </div>
@@ -413,6 +414,20 @@
       btn.innerHTML = 'Copiado!';
       btn.classList.add('copied');
       setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('copied'); }, 2000);
+    }
+
+    window.showQRCodeModal = function(url) {
+      const modalBg = document.getElementById('modal-bg');
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+      const html = `<div class="modal-box" style="text-align: center;">
+        <button type="button" class="close-modal" onclick="window.closeModal()">&times;</button>
+        <div class="modal-title">Compartilhe o Cartão</div>
+        <img src="${qrUrl}" alt="QR Code" style="border-radius: 10px; margin-bottom: 16px;" />
+        <p style="font-size: 0.9em; color: #666; word-break: break-all;">${url}</p>
+      </div>`;
+
+      modalBg.innerHTML = html;
+      modalBg.classList.add('active');
     }
 
     window.showEditModal = async function (key) {
