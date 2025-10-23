@@ -148,7 +148,12 @@
         palhaco.customLinks.forEach(lk => { if (lk.title && lk.url) customLinksHTML += `<a href="${lk.url}" target="_blank" rel="noreferrer">${lk.title}</a>`; });
         customLinksHTML += '</div>';
       }
-      dom.innerHTML = `<div class="center-card-indv">
+      // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
+      let backgroundStyle = '';
+      if (palhaco.color1 && palhaco.color2) {
+        backgroundStyle = `style="background: linear-gradient(135deg, ${palhaco.color1} 60%, ${palhaco.color2} 100%)"`;
+      }
+      dom.innerHTML = `<div class="center-card-indv" ${backgroundStyle}>
         <div class="indv-card">
           <img src="${palhaco.photo}" alt="palhaço" class="indv-photo" onerror="this.src='https://i.imgur.com/wIxRvus.png';" />
           <div class="indv-name">${palhaco.name}</div>
@@ -230,7 +235,7 @@
 
     window.showEditModal = async function (key) {
       document.getElementById('modal-bg').classList.add('active');
-      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[]};
+      let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12" };
       let isEdit = false;
       if (key) {
         const ref = doc(db, "palhacos", key);
@@ -272,6 +277,14 @@
           <input id="f_linkedin" placeholder="LinkedIn (somente username ou link)" value="${data.linkedin||""}" style="margin-bottom:6px;" />
           <input id="f_website" placeholder="Site Pessoal (URL completo ou sem http)" value="${data.website||""}" />
         </div>
+        <div class="form-grp"><label>Cores do Fundo do Cartão</label>
+          <div style="display:flex; gap: 20px; align-items:center;">
+            <div>Cor 1: <input type="color" id="f_color1" value="${data.color1 || '#E74C3C'}"></div>
+            <div>Cor 2: <input type="color" id="f_color2" value="${data.color2 || '#F39C12'}"></div>
+          </div>
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">Deixe como está para usar o padrão laranja.</div>
+        </div>
+
         <div class="form-grp"><label>Links Personalizados</label>
           <div class="custom-links" id="custom-links">`;
       (data.customLinks||[]).forEach((lk,i)=>{
@@ -341,7 +354,9 @@
           twitter: f_twitter.value,
           linkedin: f_linkedin.value,
           website: f_website.value,
-          customLinks
+          customLinks,
+          color1: f_color1.value,
+          color2: f_color2.value
         };
         submitBtn.disabled = true;
         submitBtn.innerText = "Salvando...";
