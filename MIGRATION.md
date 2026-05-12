@@ -58,22 +58,17 @@ Vá para **Authentication** → **Users**:
    Password: sua-senha-segura
    ```
 3. Clique em **Save**
+O login agora usa **Supabase Auth** diretamente. Nao e necessario criar ou sincronizar tabela `public.users`.
 
-Depois, você precisa sincronizar esse usuário à tabela `users` manualmente:
+### 5️⃣ Aplicar RLS e Policies
 
-Vá para **SQL Editor** e execute:
-```sql
-INSERT INTO users (id, email, password_hash, created_at)
-VALUES (
-  (SELECT id FROM auth.users WHERE email = 'seu-email@example.com'),
-  'seu-email@example.com',
-  'hash_da_senha_aqui'
-);
-```
+No **SQL Editor**, execute o arquivo `supabase-schema.sql` completo para:
+- Habilitar RLS em `palhacos`
+- Permitir leitura publica dos cartoes
+- Permitir criar/editar/excluir apenas para usuarios autenticados
+- Remover a tabela legado `public.users` (se existir)
 
-> ⚠️ **Nota**: Por enquanto, a autenticação é simplificada. Em produção, implemente bcrypt no backend.
-
-### 5️⃣ Copiar Credenciais
+### 6️⃣ Copiar Credenciais
 
 No dashboard do Supabase, vá para **Project Settings** → **API**:
 
@@ -81,7 +76,7 @@ Copie:
 - `Project URL` (ex: `https://zrkleykmyrovovysrgti.supabase.co`)
 - `anon public` (chave pública)
 
-### 6️⃣ Configurar Variáveis de Ambiente
+### 7️⃣ Configurar Variáveis de Ambiente
 
 1. Copie `.env.example` para `.env.local`
 2. Preencha:
