@@ -151,6 +151,7 @@
       updatePalhaco as supaUpdatePalhaco,
       deletePalhaco as supaDeletePalhaco,
       uploadImage, deleteFile, extractStoragePath
+      , uploadPDF
     } from './supabase-client.js?v=20260512b';
     
     // Inicializar Supabase globalmente
@@ -164,6 +165,7 @@
         key: record.id,
         id: record.palhaco_id,
         name: record.name,
+        pdf: record.pdf,
         jobTitle: record.job_title,
         bio: record.bio,
         photo: record.photo,
@@ -195,6 +197,7 @@
       return await supaCreatePalhaco({
         palhaco_id: data.id,
         name: data.name,
+        pdf: data.pdf || null,
         job_title: data.jobTitle,
         bio: data.bio,
         photo: data.photo,
@@ -213,6 +216,7 @@
 
     async function updatePalhaco(key, data) {
       const updates = {
+        pdf: data.pdf || null,
         name: data.name,
         job_title: data.jobTitle,
         bio: data.bio,
@@ -285,7 +289,8 @@
         bio: `<div class="indv-bio">${palhaco.bio ?? ''}</div>`,
         social: `<div class="soc-icons">${socIcons}</div>`,
         images: additionalImagesHTML,
-        links: customLinksHTML
+        links: customLinksHTML,
+        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn">Abrir Trajetória (PDF)</a> <button class="btn" id="view-pdf-modal-btn">Visualizar</button></div>` : ''
       };
       let cardBodyHTML = '';
       sectionOrder.forEach(sectionId => {
@@ -319,6 +324,18 @@
       </div>`;
       // --- NOVO: Inicializa o carrossel após renderizar o HTML ---
       initCarousel();
+      // Inicializa botão de visualização em modal para PDF (se houver)
+      const viewPdfBtn = document.getElementById('view-pdf-modal-btn');
+      if (viewPdfBtn) {
+        viewPdfBtn.addEventListener('click', () => {
+          const modalBg = document.getElementById('modal-bg');
+          modalBg.innerHTML = `<div class="modal-box" style="width:90%;max-width:900px;height:80vh;">
+            <button type="button" class="close-modal" data-action="close-modal">&times;</button>
+            <div style="height:100%;"><iframe src="${palhaco.pdf}" style="width:100%;height:100%;border:0;" /></div>
+          </div>`;
+          modalBg.classList.add('active');
+        });
+      }
     }
 
     function initCarousel() {
@@ -442,8 +459,9 @@
               <div style="font-size:0.96em;color:var(--secondary); margin-bottom: 8px;">${p.jobTitle ?? ''}</div>
               <div class="card-link">${shareLink}</div>
             </div>
-              <div class="card-actions" data-share-link="${shareLink}" data-key="${p.key}" data-id="${p.id}">
+              <div class="card-actions" data-share-link="${shareLink}" data-key="${p.key}" data-id="${p.id}" data-pdf="${p.pdf||''}">
                 <button class="btn copiar-link"><i class="fa fa-copy"></i> Copiar Link</button>
+                ${p.pdf ? `<button class="btn view-pdf"><i class="fa fa-file-pdf-o"></i> Trajetória</button>` : ''}
                 <button class="btn accent"><i class="fa fa-eye"></i> Ver Cartão</button>
                 <button class="btn" style="background-color: #95a5a6;"><i class="fa fa-qrcode"></i> QR Code</button>
                 <button class="btn secondary"><i class="fa fa-pen"></i> Editar</button>
@@ -524,6 +542,13 @@
           <input type="file" id="f_photo_file" accept="image/*" />
           <input required id="f_photo" value="${data.photo||""}" placeholder="URL da foto" style="margin-top:10px;" />
           <img src="${data.photo||''}" id="photo-preview" style="width:70px; height:70px; border-radius:50%; background:#eee; margin-top:7px; object-fit:cover; ${data.photo ? '' : 'display:none;'}" onerror="this.style.display='none';" />
+        </div>
+        <div class="form-grp"><label>Trajetória do Novato (PDF)</label>
+          <input type="file" id="f_pdf_file" accept="application/pdf" />
+          <input id="f_pdf" value="${data.pdf||""}" placeholder="URL do PDF (opcional)" style="margin-top:10px;" />
+          <div id="pdf-preview-container" style="margin-top:6px; ${data.pdf ? '' : 'display:none;'}">
+            <a id="pdf-preview" href="${data.pdf||''}" target="_blank">Abrir PDF</a>
+          </div>
         </div>
         <div class="form-grp"><label>Cargo/Função</label>
           <input id="f_role" value="${data.jobTitle||""}" />
@@ -724,10 +749,42 @@
           photoInput.placeholder = previousPlaceholder;
         }
       } 
+      // Upload handler para PDF
+      document.getElementById('f_pdf_file').onchange = async function(e){
+        const file = e.target.files[0];
+        if (!file) return;
+        const pdfInput = document.getElementById('f_pdf');
+        const pdfPreviewContainer = document.getElementById('pdf-preview-container');
+        const pdfPreview = document.getElementById('pdf-preview');
+        const previousPlaceholder = pdfInput.placeholder;
+        pdfInput.placeholder = "Enviando PDF...";
+        pdfInput.disabled = true;
+        try {
+          const result = await uploadPDF(file, 'pdfs');
+          pdfInput.value = result.publicUrl;
+          if (pdfPreview) {
+            pdfPreview.href = result.publicUrl;
+            pdfPreview.textContent = 'Abrir PDF';
+          }
+          pdfPreviewContainer.style.display = 'block';
+        } catch(err) {
+          formErr(`Erro ao enviar PDF: ${err.message || 'verifique o bucket/policy no Supabase.'}`);
+          console.error(err);
+        } finally {
+          pdfInput.disabled = false;
+          pdfInput.placeholder = previousPlaceholder;
+        }
+      }
       document.getElementById('f_photo').oninput = function(){
         const preview = document.getElementById('photo-preview');
-        preview.src = this.value;
-        preview.style.display = this.value ? 'block' : 'none';
+        const val = (this.value || '').trim();
+        const isUrl = /^https?:\/\//i.test(val) || val.startsWith('data:') || val.startsWith('blob:');
+        if (isUrl) {
+          preview.src = val;
+          preview.style.display = 'block';
+        } else {
+          preview.style.display = 'none';
+        }
       }
       document.getElementById('palhacoForm').onsubmit = async function(e){
         e.preventDefault();
@@ -777,6 +834,7 @@
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
+          pdf: f_pdf.value.trim(),
           bio: f_bio.value,
           instagram: f_instagram.value,
           facebook: f_facebook.value,
@@ -867,6 +925,7 @@
       const actionsContainer = target.closest('.card-actions');
       if (actionsContainer) {
         if (target.closest('.copiar-link')) copyLink(target.closest('.copiar-link'), actionsContainer.dataset.shareLink);
+        if (target.closest('.view-pdf')) window.open(actionsContainer.dataset.pdf, '_blank');
         if (target.closest('.accent')) window.open(`?id=${actionsContainer.dataset.id}`, '_blank');
         if (target.closest('[style*="95a5a6"]')) showQRCodeModal(actionsContainer.dataset.shareLink);
         if (target.closest('.secondary')) showEditModal(actionsContainer.dataset.key);
