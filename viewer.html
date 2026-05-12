@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Visualizador - Trajetória (Livro)</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root{--bg:#f3efe9;--page:#fff;--accent:#E74C3C}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{background:linear-gradient(180deg, #efe7e2 0%, #f7f4f2 100%);display:flex;align-items:center;justify-content:center;gap:18px;padding:24px}
+    .viewer{width:100%;max-width:1100px;background:transparent;display:flex;flex-direction:column;align-items:center}
+    .toolbar{width:100%;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
+    .toolbar .left, .toolbar .right{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:700}
+    .btn.secondary{background:#444}
+    .book-wrap{width:100%;display:flex;justify-content:center}
+    .book{position:relative;width:720px;height:920px;perspective:2000px}
+    .view-canvas{position:absolute;inset:0;background:var(--page);box-shadow:0 10px 30px rgba(0,0,0,0.15);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+    canvas{display:block;max-width:100%;height:auto}
+    .meta{color:#333;font-size:0.95em}
+    .controls {display:flex; gap:8px}
+    @media(max-width:900px){ .book{width:90vw;height:120vw} }
+    .spinner{width:44px;height:44px;border-radius:50%;border:5px solid #0002;border-top-color:var(--accent);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Flipper animation with shadow/curve */
+    .flipper{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+    .flipper .face{position:absolute;inset:0;background-size:cover;background-position:center;background-repeat:no-repeat;backface-visibility:hidden;border-radius:6px;box-shadow:0 20px 50px rgba(0,0,0,0.25)}
+    .flipper .back{transform:rotateY(180deg)}
+    /* subtle page curl using a pseudo overlay */
+    .flipper .face::after{content:"";position:absolute;inset:0;border-radius:6px;pointer-events:none;background:linear-gradient(90deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.02) 18%, rgba(255,255,255,0.0) 40%);mix-blend-mode:multiply}
+    .flipper.forward{transform-origin:right center;animation:flipForward .9s cubic-bezier(.2,.9,.2,1) forwards}
+    .flipper.backwards{transform-origin:left center;animation:flipBack .9s cubic-bezier(.2,.9,.2,1) forwards}
+    @keyframes flipForward{from{transform:rotateY(0deg)}50%{transform:rotateY(-90deg) translateZ(30px) skewY(-1deg)}to{transform:rotateY(-180deg)}}
+    @keyframes flipBack{from{transform:rotateY(0deg)}50%{transform:rotateY(90deg) translateZ(30px) skewY(1deg)}to{transform:rotateY(180deg)}}
+  </style>
+</head>
+<body>
+  <div class="viewer">
+    <div class="toolbar">
+      <div class="left">
+        <button id="backBtn" class="btn secondary">◀ Voltar</button>
+        <div class="controls">
+          <button id="prev" class="btn">Anterior</button>
+          <button id="next" class="btn">Próxima</button>
+        </div>
+      </div>
+      <div class="meta" id="meta">Carregando...</div>
+      <div class="right">
+        <button id="zoomOut" class="btn secondary">−</button>
+        <button id="zoomIn" class="btn">+</button>
+        <button id="openSrc" class="btn secondary">Abrir PDF</button>
+      </div>
+    </div>
+
+    <div class="book-wrap">
+      <div class="book" id="book">
+        <div id="loader" style="padding:20px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div class="spinner"></div></div>
+        <div class="view-canvas" id="viewBox">
+          <canvas id="viewCanvas" style="display:none"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>
+    // Leitura do parâmetro pdf
+    const params = new URLSearchParams(window.location.search);
+    const pdfUrlParam = params.get('pdf') || '';
+    const pdfUrl = pdfUrlParam ? decodeURIComponent(pdfUrlParam) : null;
+
+    const viewCanvas = document.getElementById('viewCanvas');
+    const ctx = viewCanvas.getContext('2d');
+    const loader = document.getElementById('loader');
+    const meta = document.getElementById('meta');
+    const book = document.getElementById('book');
+    const viewBox = document.getElementById('viewBox');
+
+    if (!pdfUrl) {
+      meta.innerText = 'Nenhum PDF fornecido.';
+      loader.style.display = 'none';
+    }
+
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    let pdfDoc = null; let currentPage = 1; let scale = 1.15; let rendering = false;
+
+    // Performance: thumbnail cache and limits
+    const thumbCache = new Map(); // pageNum -> dataURL
+    const MAX_THUMB_CACHE = 8;
+    const THUMBNAIL_SCALE_FACTOR = 0.55; // relative to `scale`
+
+    // Helper: render page into a canvas element and return when done
+    async function renderIntoCanvas(pageNum, targetCanvas, useScale = scale) {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({scale: useScale});
+      targetCanvas.width = Math.min(viewport.width, 3000);
+      targetCanvas.height = viewport.height;
+      const renderContext = { canvasContext: targetCanvas.getContext('2d'), viewport };
+      await page.render(renderContext).promise;
+    }
+
+    // Helper: render page and get data URL (for animation faces)
+    // Uses thumbnail scale to speed up rendering for animations.
+    async function renderPageDataURL(pageNum, useThumbnail = true) {
+      if (useThumbnail && thumbCache.has(pageNum)) return thumbCache.get(pageNum);
+      const off = document.createElement('canvas');
+      const useScale = useThumbnail ? Math.max(0.4, scale * THUMBNAIL_SCALE_FACTOR) : scale;
+      await renderIntoCanvas(pageNum, off, useScale);
+      const data = off.toDataURL('image/png');
+      if (useThumbnail) {
+        thumbCache.set(pageNum, data);
+        // keep cache size bounded (remove oldest entry)
+        if (thumbCache.size > MAX_THUMB_CACHE) {
+          const firstKey = thumbCache.keys().next().value;
+          thumbCache.delete(firstKey);
+        }
+      }
+      return data;
+    }
+
+    // Prefetch small thumbnails for adjacent pages (non-blocking)
+    function prefetchAdjacent(pageNum) {
+      [pageNum - 1, pageNum + 1].forEach(p => {
+        if (p < 1 || p > (pdfDoc && pdfDoc.numPages)) return;
+        if (thumbCache.has(p)) return;
+        // schedule low-priority render
+        setTimeout(() => { renderPageDataURL(p, true).catch(()=>{}); }, 300);
+      });
+    }
+
+    async function renderPage(num) {
+      if (!pdfDoc || rendering) return;
+      rendering = true;
+      loader.style.display = 'none';
+      viewCanvas.style.display = 'block';
+      await renderIntoCanvas(num, viewCanvas, scale);
+      meta.innerText = `Página ${currentPage} de ${pdfDoc.numPages}`;
+      // Prefetch small thumbs for neighbors to improve perceived responsiveness
+      prefetchAdjacent(num);
+      rendering = false;
+    }
+
+    function queueRenderPage(num) { currentPage = num; renderPage(num); }
+
+    async function flipTo(targetPage) {
+      if (!pdfDoc || rendering) return;
+      if (targetPage < 1 || targetPage > pdfDoc.numPages) return;
+      const forward = targetPage > currentPage;
+      // Use cached thumbnails when available, otherwise render small versions (fast)
+      const curImgPromise = renderPageDataURL(currentPage, true);
+      const nextImgPromise = renderPageDataURL(targetPage, true);
+      const [curImg, nextImg] = await Promise.all([curImgPromise, nextImgPromise]);
+      // Create flipper using low-res images for speed
+      const flipper = document.createElement('div');
+      flipper.className = 'flipper ' + (forward ? 'forward' : 'backwards');
+      flipper.style.pointerEvents = 'none';
+      flipper.innerHTML = `<div class="face front" style="background-image:url(${curImg})"></div><div class="face back" style="background-image:url(${nextImg})"></div>`;
+      book.appendChild(flipper);
+      // Wait for animation end
+      await new Promise((res) => { flipper.addEventListener('animationend', res, {once:true}); });
+      // Cleanup and render high-res page (on-demand)
+      flipper.remove();
+      currentPage = targetPage;
+      await renderPage(currentPage);
+    }
+
+    function prevPage() { if (currentPage <= 1) return; flipTo(currentPage - 1); }
+    function nextPage() { if (currentPage >= pdfDoc.numPages) return; flipTo(currentPage + 1); }
+
+    document.getElementById('prev').addEventListener('click', prevPage);
+    document.getElementById('next').addEventListener('click', nextPage);
+    document.getElementById('zoomIn').addEventListener('click', () => { scale = Math.min(3, scale + 0.15); renderPage(currentPage); });
+    document.getElementById('zoomOut').addEventListener('click', () => { scale = Math.max(0.4, scale - 0.15); renderPage(currentPage); });
+    document.getElementById('backBtn').addEventListener('click', () => window.history.back());
+    document.getElementById('openSrc').addEventListener('click', () => { if (pdfUrl) window.open(pdfUrl, '_blank'); });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight') nextPage();
+      if (e.key === '+' || e.key === '=') document.getElementById('zoomIn').click();
+      if (e.key === '-') document.getElementById('zoomOut').click();
+    });
+
+    // Carrega o PDF
+    (async function(){
+      if (!pdfUrl) return;
+      try {
+        meta.innerText = 'Carregando PDF...';
+        loader.style.display = 'flex';
+        const loadingTask = pdfjsLib.getDocument({url: pdfUrl, withCredentials: false});
+        pdfDoc = await loadingTask.promise;
+        currentPage = 1;
+        await renderPage(currentPage);
+      } catch(err) {
+        console.error('Erro ao carregar PDF', err);
+        meta.innerText = 'Erro ao carregar o PDF. Verifique URL/CORS.';
+        loader.style.display = 'none';
+      }
+    })();
+  </script>
+</body>
+</html>
