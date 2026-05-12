@@ -22,24 +22,21 @@ export async function initSupabase() {
 
 export async function login(email, password) {
   const db = await initSupabase()
-  
-  const { data, error } = await db
-    .from('users')
-    .select('id')
-    .eq('email', email)
-    .single()
-  
-  if (error || !data) throw new Error('Usuário não encontrado')
-  
-  // Validação simples de senha (em produção, usar bcrypt no backend)
-  // Por enquanto, vamos usar sessionStorage como mock
-  sessionStorage.setItem('user_id', data.id)
+  const { data, error } = await db.auth.signInWithPassword({ email, password })
+
+  if (error || !data?.user) {
+    throw new Error('Email ou senha inválidos')
+  }
+
+  sessionStorage.setItem('user_id', data.user.id)
   sessionStorage.setItem('user_email', email)
-  
-  return { success: true, user: data }
+
+  return { success: true, user: data.user }
 }
 
 export async function logout() {
+  const db = await initSupabase()
+  await db.auth.signOut()
   sessionStorage.removeItem('user_id')
   sessionStorage.removeItem('user_email')
   return { success: true }
