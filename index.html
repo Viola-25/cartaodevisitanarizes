@@ -706,16 +706,22 @@
       document.getElementById('f_photo_file').onchange = async function(e){
         const file = e.target.files[0];
         if (!file) return;
-        document.getElementById('f_photo').value = "Enviando...";
+        const photoInput = document.getElementById('f_photo');
+        const previousPlaceholder = photoInput.placeholder;
+        photoInput.placeholder = "Enviando imagem...";
+        photoInput.disabled = true;
         try {
           const result = await uploadImage(file, 'images');
-          document.getElementById('f_photo').value = result.publicUrl;
+          photoInput.value = result.publicUrl;
           const preview = document.getElementById('photo-preview');
           preview.src = result.publicUrl;
           preview.style.display = 'block';
         } catch(err) {
-          formErr("Erro ao enviar imagem.");
+          formErr(`Erro ao enviar imagem: ${err.message || 'verifique o bucket/policy no Supabase.'}`);
           console.error(err);
+        } finally {
+          photoInput.disabled = false;
+          photoInput.placeholder = previousPlaceholder;
         }
       } 
       document.getElementById('f_photo').oninput = function(){

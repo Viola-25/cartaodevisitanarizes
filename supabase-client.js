@@ -151,17 +151,26 @@ export async function deletePalhaco(palhaco_id) {
 
 export async function uploadImage(file, bucket = 'images') {
   const db = await initSupabase()
+
+  const { data: authData } = await db.auth.getUser()
+  if (!authData?.user) {
+    throw new Error('Voce precisa estar logado para enviar imagens.')
+  }
   
   const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
   const filePath = bucket === 'images' ? `palhacos/${fileName}` : fileName
   
   const { data, error } = await db.storage
     .from(bucket)
-    .upload(filePath, file)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || 'application/octet-stream'
+    })
   
   if (error) {
-    console.error('Erro ao fazer upload:', error)
-    throw error
+    console.error('Erro ao fazer upload:', error.message, error)
+    throw new Error(error.message || 'Falha no upload da imagem.')
   }
   
   // Obter URL pública
@@ -179,16 +188,25 @@ export async function uploadImage(file, bucket = 'images') {
 
 export async function uploadPDF(file, bucket = 'pdfs') {
   const db = await initSupabase()
+
+  const { data: authData } = await db.auth.getUser()
+  if (!authData?.user) {
+    throw new Error('Voce precisa estar logado para enviar PDFs.')
+  }
   
   const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
   
   const { data, error } = await db.storage
     .from(bucket)
-    .upload(fileName, file)
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type || 'application/pdf'
+    })
   
   if (error) {
-    console.error('Erro ao fazer upload de PDF:', error)
-    throw error
+    console.error('Erro ao fazer upload de PDF:', error.message, error)
+    throw new Error(error.message || 'Falha no upload do PDF.')
   }
   
   // Obter URL pública
