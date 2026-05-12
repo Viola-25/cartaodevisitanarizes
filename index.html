@@ -459,9 +459,8 @@
               <div style="font-size:0.96em;color:var(--secondary); margin-bottom: 8px;">${p.jobTitle ?? ''}</div>
               <div class="card-link">${shareLink}</div>
             </div>
-              <div class="card-actions" data-share-link="${shareLink}" data-key="${p.key}" data-id="${p.id}" data-pdf="${p.pdf||''}">
+              <div class="card-actions" data-share-link="${shareLink}" data-key="${p.key}" data-id="${p.id}">
                 <button class="btn copiar-link"><i class="fa fa-copy"></i> Copiar Link</button>
-                ${p.pdf ? `<button class="btn view-pdf"><i class="fa fa-file-pdf-o"></i> Trajetória</button>` : ''}
                 <button class="btn accent"><i class="fa fa-eye"></i> Ver Cartão</button>
                 <button class="btn" style="background-color: #95a5a6;"><i class="fa fa-qrcode"></i> QR Code</button>
                 <button class="btn secondary"><i class="fa fa-pen"></i> Editar</button>
@@ -925,7 +924,6 @@
       const actionsContainer = target.closest('.card-actions');
       if (actionsContainer) {
         if (target.closest('.copiar-link')) copyLink(target.closest('.copiar-link'), actionsContainer.dataset.shareLink);
-        if (target.closest('.view-pdf')) window.open(actionsContainer.dataset.pdf, '_blank');
         if (target.closest('.accent')) window.open(`?id=${actionsContainer.dataset.id}`, '_blank');
         if (target.closest('[style*="95a5a6"]')) showQRCodeModal(actionsContainer.dataset.shareLink);
         if (target.closest('.secondary')) showEditModal(actionsContainer.dataset.key);
