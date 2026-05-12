@@ -296,6 +296,10 @@
       sectionOrder.forEach(sectionId => {
         if (sections[sectionId]) cardBodyHTML += sections[sectionId];
       });
+      // Sempre mostrar link/visualizador do PDF se existir, independente da ordem das seções
+      if (palhaco.pdf && palhaco.pdf.length) {
+        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn">Abrir Trajetória (PDF)</a> <button class="btn" id="view-pdf-modal-btn">Visualizar</button></div>`;
+      }
 
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
       let backgroundStyle = '';
