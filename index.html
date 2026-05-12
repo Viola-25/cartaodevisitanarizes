@@ -290,7 +290,7 @@
         social: `<div class="soc-icons">${socIcons}</div>`,
         images: additionalImagesHTML,
         links: customLinksHTML,
-        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn">Abrir Trajetória (PDF)</a> <button class="btn" id="view-pdf-modal-btn">Visualizar</button></div>` : ''
+        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória (PDF)</a></div>` : ''
       };
       let cardBodyHTML = '';
       sectionOrder.forEach(sectionId => {
@@ -298,7 +298,7 @@
       });
       // Sempre mostrar link/visualizador do PDF se existir, independente da ordem das seções
       if (palhaco.pdf && palhaco.pdf.length) {
-        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn">Abrir Trajetória (PDF)</a> <button class="btn" id="view-pdf-modal-btn">Visualizar</button></div>`;
+        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória (PDF)</a></div>`;
       }
 
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
@@ -328,18 +328,7 @@
       </div>`;
       // --- NOVO: Inicializa o carrossel após renderizar o HTML ---
       initCarousel();
-      // Inicializa botão de visualização em modal para PDF (se houver)
-      const viewPdfBtn = document.getElementById('view-pdf-modal-btn');
-      if (viewPdfBtn) {
-        viewPdfBtn.addEventListener('click', () => {
-          const modalBg = document.getElementById('modal-bg');
-          modalBg.innerHTML = `<div class="modal-box" style="width:90%;max-width:900px;height:80vh;">
-            <button type="button" class="close-modal" data-action="close-modal">&times;</button>
-            <div style="height:100%;"><iframe src="${palhaco.pdf}" style="width:100%;height:100%;border:0;" /></div>
-          </div>`;
-          modalBg.classList.add('active');
-        });
-      }
+      // PDF agora abre em nova aba a partir do botão estilizado
     }
 
     function initCarousel() {
