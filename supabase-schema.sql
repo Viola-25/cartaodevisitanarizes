@@ -31,18 +31,21 @@ CREATE INDEX idx_palhacos_palhaco_id ON palhacos(palhaco_id);
 CREATE INDEX idx_palhacos_created_at ON palhacos(created_at DESC);
 
 -- Função para atualizar updated_at automaticamente
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Trigger para palhacos
 CREATE TRIGGER update_palhacos_updated_at BEFORE UPDATE ON palhacos
 FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
+EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Remover tabela legado que gerava alerta de seguranca no Advisor
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
@@ -54,19 +57,19 @@ ALTER TABLE palhacos ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Palhacos are publicly readable" ON palhacos;
 CREATE POLICY "Palhacos are publicly readable" ON palhacos
-  FOR SELECT USING (true);
+  FOR SELECT USING ((auth.role() = 'anon') OR (auth.role() = 'authenticated'));
 
 DROP POLICY IF EXISTS "Authenticated can insert palhacos" ON palhacos;
 CREATE POLICY "Authenticated can insert palhacos" ON palhacos
-  FOR INSERT TO authenticated WITH CHECK (true);
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "Authenticated can update palhacos" ON palhacos;
 CREATE POLICY "Authenticated can update palhacos" ON palhacos
-  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+  FOR UPDATE TO authenticated USING (auth.uid() IS NOT NULL) WITH CHECK (auth.uid() IS NOT NULL);
 
 DROP POLICY IF EXISTS "Authenticated can delete palhacos" ON palhacos;
 CREATE POLICY "Authenticated can delete palhacos" ON palhacos
-  FOR DELETE TO authenticated USING (true);
+  FOR DELETE TO authenticated USING (auth.uid() IS NOT NULL);
 
 -- Criar bucket de storage para PDFs
 -- Via dashboard: Storage > Create new bucket > Nome: 'pdfs' > Public
