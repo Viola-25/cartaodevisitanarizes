@@ -52,10 +52,18 @@ EXECUTE FUNCTION public.update_updated_at_column();
 -- Garantir coluna `pdf` caso tabela já exista (idempotente)
 ALTER TABLE IF EXISTS palhacos ADD COLUMN IF NOT EXISTS pdf TEXT;
 
--- Remover tabela legado que gerava alerta de seguranca no Advisor
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-DROP INDEX IF EXISTS idx_users_email;
-DROP TABLE IF EXISTS users;
+-- Remover tabela legado que gerava alerta de seguranca no Advisor (checa existência antes de usar)
+DO $$
+BEGIN
+  IF to_regclass('public.users') IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'update_users_updated_at') THEN
+      EXECUTE 'DROP TRIGGER update_users_updated_at ON public.users';
+    END IF;
+    EXECUTE 'DROP INDEX IF EXISTS idx_users_email';
+    EXECUTE 'DROP TABLE IF EXISTS public.users';
+  END IF;
+END
+$$;
 
 -- RLS (Row Level Security) para tabela principal
 ALTER TABLE palhacos ENABLE ROW LEVEL SECURITY;
