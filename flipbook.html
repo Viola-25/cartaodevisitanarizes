@@ -6,90 +6,119 @@
   <title>Flipbook - Trajetória</title>
   <link rel="icon" href="data:," />
   <style>
-    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial}
-    body{background:#f0ebe6;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px}
-    .topbar{width:100%;max-width:1200px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-    .btn{background:#E74C3C;color:#fff;padding:8px 12px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
-    #flipbook-wrap{width:100%;max-width:1200px;height:80vh;background:#ddd;display:flex;align-items:center;justify-content:center}
-    #flipbook{width:90%;height:95%;}
-    .loading{font-size:1em;color:#333}
-    /* turn.js requires .page elements */
-    .page{background-size:cover;background-position:center;background-repeat:no-repeat}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial;overflow:hidden}
+    body{background:linear-gradient(135deg, #d4cac3 0%, #e8dfd9 100%);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:18px}
+    .topbar{width:100%;max-width:1400px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+    .btn{background:#E74C3C;color:#fff;padding:8px 14px;border-radius:8px;border:none;font-weight:700;cursor:pointer;font-size:0.9em}
+    .btn:hover{transform:translateY(-1px);box-shadow:0 4px 8px rgba(0,0,0,0.15)}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .controls{display:flex;gap:8px}
+    #status{font-size:0.95em;color:#333;font-weight:600}
+    .book-wrap{width:100%;max-width:1400px;flex:1;perspective:1800px;display:flex;align-items:center;justify-content:center}
+    .book{display:flex;gap:0;transform-style:preserve-3d;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .page-col{width:480px;height:640px;background:#fff;border-radius:2px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
+    .page-col canvas{width:100%;height:100%;display:block}
+    .page-col.left{transform:rotateY(8deg);margin-right:-2px;box-shadow:-8px 0 12px rgba(0,0,0,0.1)}
+    .page-col.right{transform:rotateY(-8deg);margin-left:-2px;box-shadow:8px 0 12px rgba(0,0,0,0.1)}
+    .spine{width:8px;background:linear-gradient(90deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.15) 100%)}
+    @media(max-width:1100px){
+      .page-col{width:360px;height:480px}
+    }
+    @media(max-width:600px){
+      .page-col{width:90vw;height:auto;aspect-ratio:0.75}
+      .page-col.left,.page-col.right{margin:0;transform:rotateY(0deg);box-shadow:0 4px 8px rgba(0,0,0,0.15)}
+      .spine{display:none}
+    }
   </style>
 </head>
 <body>
   <div class="topbar">
-    <div>
+    <div class="controls">
       <button id="back" class="btn">← Voltar</button>
-      <button id="fullscreen" class="btn" style="margin-left:8px;background:#444">Fullscreen</button>
+      <button id="prev" class="btn">◀ Anterior</button>
+      <button id="next" class="btn">Próxima ▶</button>
     </div>
-    <div id="status" class="loading">Preparando...</div>
-    <div></div>
+    <div id="status">Carregando...</div>
+    <div class="controls">
+      <button id="fullscreen" class="btn" style="background:#555">⛶ Fullscreen</button>
+    </div>
   </div>
 
-  <div id="flipbook-wrap">
-    <div id="flipbook"></div>
+  <div class="book-wrap">
+    <div class="book">
+      <div class="page-col left" id="leftPage"><canvas></canvas></div>
+      <div class="spine"></div>
+      <div class="page-col right" id="rightPage"><canvas></canvas></div>
+    </div>
   </div>
 
-  <!-- turn.js requires older jQuery (1.x); load compatible jQuery first -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
-    const pdfUrlParam = params.get('pdf') || '';
-    const pdfUrl = pdfUrlParam ? decodeURIComponent(pdfUrlParam) : null;
+    const pdfUrl = params.get('pdf') ? decodeURIComponent(params.get('pdf')) : null;
     const status = document.getElementById('status');
+    const leftCanvas = document.querySelector('#leftPage canvas');
+    const rightCanvas = document.querySelector('#rightPage canvas');
+    let pdfDoc = null;
+    let leftPageNum = 1;
+    let rightPageNum = 2;
 
-    if (!pdfUrl) { status.innerText = 'PDF não fornecido.'; }
+    if (!pdfUrl) { status.innerText = 'PDF não fornecido.'; document.getElementById('next').disabled = true; document.getElementById('prev').disabled = true; }
 
     const pdfjsLib = window['pdfjs-dist/build/pdf'];
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+    async function renderPage(pageNum, canvas) {
+      if (!pdfDoc || pageNum < 1 || pageNum > pdfDoc.numPages) return;
+      const page = await pdfDoc.getPage(pageNum);
+      const scale = 1.2;
+      const viewport = page.getViewport({scale});
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+    }
+
+    async function showSpread(leftPage, rightPage) {
+      if (!pdfDoc) return;
+      leftPageNum = Math.max(1, leftPage);
+      rightPageNum = Math.min(pdfDoc.numPages, rightPage);
+      if (leftPageNum > pdfDoc.numPages) return;
+      await renderPage(leftPageNum, leftCanvas);
+      if (rightPageNum <= pdfDoc.numPages) {
+        await renderPage(rightPageNum, rightCanvas);
+      } else {
+        rightCanvas.width = 0; rightCanvas.height = 0;
+      }
+      status.innerText = `Páginas ${leftPageNum}–${Math.min(rightPageNum, pdfDoc.numPages)} de ${pdfDoc.numPages}`;
+      document.getElementById('prev').disabled = leftPageNum <= 1;
+      document.getElementById('next').disabled = rightPageNum >= pdfDoc.numPages;
+    }
+
     (async function(){
       try {
         status.innerText = 'Carregando PDF...';
-        const loadingTask = pdfjsLib.getDocument({url: pdfUrl, withCredentials:false});
-        const pdf = await loadingTask.promise;
-        const total = pdf.numPages;
-        // Render thumbnails progressively
-        status.innerText = `Renderizando ${total} páginas...`;
-        for (let i=1;i<=total;i++) {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({scale:1.0});
-          const canvas = document.createElement('canvas');
-          // scale down to speed up thumbnails
-          const scale = Math.max(0.6, Math.min(1.0, 900/viewport.width));
-          const v = page.getViewport({scale});
-          canvas.width = v.width; canvas.height = v.height;
-          await page.render({canvasContext: canvas.getContext('2d'), viewport: v}).promise;
-          const data = canvas.toDataURL('image/png');
-          const pageDiv = document.createElement('div');
-          pageDiv.className = 'page';
-          pageDiv.style.width = v.width + 'px';
-          pageDiv.style.height = v.height + 'px';
-          pageDiv.style.backgroundImage = `url(${data})`;
-          document.getElementById('flipbook').appendChild(pageDiv);
-          status.innerText = `Renderizando página ${i} / ${total}`;
-        }
-        // Initialize turn.js after pages are appended
-        $(function(){
-          try {
-            $('#flipbook').turn({width: '100%', height: '100%', autoCenter: true});
-            status.innerText = 'Concluído — use as setas ou arraste para virar páginas.';
-          } catch(initErr) {
-            console.error('turn.js init error', initErr);
-            status.innerText = 'Erro ao inicializar flipbook.';
-          }
-        });
+        const task = pdfjsLib.getDocument({url: pdfUrl, withCredentials:false});
+        pdfDoc = await task.promise;
+        await showSpread(1, 2);
       } catch(err) {
         console.error(err);
-        status.innerText = 'Erro ao carregar/gerar flipbook.';
+        status.innerText = `Erro: ${err.message || 'falha ao carregar PDF'}`;
       }
     })();
 
-    document.getElementById('back').addEventListener('click', ()=>{ window.close(); });
-    document.getElementById('fullscreen').addEventListener('click', ()=>{ if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); });
+    document.getElementById('prev').addEventListener('click', () => showSpread(leftPageNum - 2, rightPageNum - 2));
+    document.getElementById('next').addEventListener('click', () => showSpread(leftPageNum + 2, rightPageNum + 2));
+    document.getElementById('back').addEventListener('click', () => window.close());
+    document.getElementById('fullscreen').addEventListener('click', () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(()=>{});
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') document.getElementById('prev').click();
+      if (e.key === 'ArrowRight') document.getElementById('next').click();
+      if (e.key === 'Escape' && document.fullscreenElement) document.exitFullscreen();
+    });
   </script>
 </body>
 </html>
