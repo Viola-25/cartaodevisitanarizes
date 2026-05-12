@@ -26,19 +26,9 @@ CREATE TABLE palhacos (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Tabela de Usuários (para autenticação)
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Índices para performance
 CREATE INDEX idx_palhacos_palhaco_id ON palhacos(palhaco_id);
 CREATE INDEX idx_palhacos_created_at ON palhacos(created_at DESC);
-CREATE INDEX idx_users_email ON users(email);
 
 -- Função para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -54,20 +44,29 @@ CREATE TRIGGER update_palhacos_updated_at BEFORE UPDATE ON palhacos
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
--- Trigger para users
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-FOR EACH ROW
-EXECUTE FUNCTION update_updated_at_column();
+-- Remover tabela legado que gerava alerta de seguranca no Advisor
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+DROP INDEX IF EXISTS idx_users_email;
+DROP TABLE IF EXISTS users;
 
--- RLS (Row Level Security) - Descomente se usar auth do Supabase
--- ALTER TABLE palhacos ENABLE ROW LEVEL SECURITY;
--- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- RLS (Row Level Security) para tabela principal
+ALTER TABLE palhacos ENABLE ROW LEVEL SECURITY;
 
--- CREATE POLICY "Palhacos are publicly readable" ON palhacos
---   FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Palhacos are publicly readable" ON palhacos;
+CREATE POLICY "Palhacos are publicly readable" ON palhacos
+  FOR SELECT USING (true);
 
--- CREATE POLICY "Users can only read themselves" ON users
---   FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Authenticated can insert palhacos" ON palhacos;
+CREATE POLICY "Authenticated can insert palhacos" ON palhacos
+  FOR INSERT TO authenticated WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated can update palhacos" ON palhacos;
+CREATE POLICY "Authenticated can update palhacos" ON palhacos
+  FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Authenticated can delete palhacos" ON palhacos;
+CREATE POLICY "Authenticated can delete palhacos" ON palhacos
+  FOR DELETE TO authenticated USING (true);
 
 -- Criar bucket de storage para PDFs
 -- Via dashboard: Storage > Create new bucket > Nome: 'pdfs' > Public
