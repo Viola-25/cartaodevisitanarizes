@@ -5,7 +5,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Tabela de Palhaços
-CREATE TABLE palhacos (
+CREATE TABLE IF NOT EXISTS palhacos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   palhaco_id VARCHAR(100) UNIQUE NOT NULL,
   name VARCHAR(255) NOT NULL,
@@ -28,8 +28,8 @@ CREATE TABLE palhacos (
 );
 
 -- Índices para performance
-CREATE INDEX idx_palhacos_palhaco_id ON palhacos(palhaco_id);
-CREATE INDEX idx_palhacos_created_at ON palhacos(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_palhacos_palhaco_id ON palhacos(palhaco_id);
+CREATE INDEX IF NOT EXISTS idx_palhacos_created_at ON palhacos(created_at DESC);
 
 -- Função para atualizar updated_at automaticamente
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -44,6 +44,7 @@ END;
 $$;
 
 -- Trigger para palhacos
+DROP TRIGGER IF EXISTS update_palhacos_updated_at ON palhacos;
 CREATE TRIGGER update_palhacos_updated_at BEFORE UPDATE ON palhacos
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
