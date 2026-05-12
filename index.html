@@ -140,53 +140,107 @@
   <div id="main"></div>
   <div class="modal-bg" id="modal-bg"></div>
 
-  <!-- Configuração do Firebase (carregada de um arquivo local não versionado) -->
-  <script src="firebase-config.js"></script>
-  <!-- Firebase SDKs -->
+  <!-- Cliente Supabase -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js"; 
-    import { getFirestore, collection, getDocs, addDoc, doc, deleteDoc, getDoc, updateDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
-    import { getStorage, ref as stRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-storage.js";
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const storage = getStorage(app);
+    import { 
+      initSupabase, login, logout, getCurrentUser,
+      getPalhacos as supaGetPalhacos,
+      getByPalhacoId as supaGetByPalhacoId,
+      createPalhaco as supaCreatePalhaco,
+      updatePalhaco as supaUpdatePalhaco,
+      deletePalhaco as supaDeletePalhaco,
+      uploadImage, deleteFile, extractStoragePath
+    } from './supabase-client.js';
+    
+    // Inicializar Supabase globalmente
+    window.supabaseInit = initSupabase;
 
     function getParamId() { const url = new URL(window.location.href); return url.searchParams.get('id'); }
 
-    // --- NOVO: formata username ou link completo para URL final ---
+    function mapFromDb(record) {
+      if (!record) return null;
+      return {
+        key: record.id,
+        id: record.palhaco_id,
+        name: record.name,
+        jobTitle: record.job_title,
+        bio: record.bio,
+        photo: record.photo,
+        instagram: record.instagram,
+        facebook: record.facebook,
+        twitter: record.twitter,
+        linkedin: record.linkedin,
+        website: record.website,
+        customLinks: record.custom_links || [],
+        color1: record.color1,
+        color2: record.color2,
+        additionalImages: record.additional_images || [],
+        sectionOrder: record.section_order || ['bio', 'social', 'images', 'links']
+      };
+    }
+
+    // --- Mapeamento de funções Firebase para Supabase ---
+    async function getPalhacos() {
+      const rows = await supaGetPalhacos();
+      return rows.map(mapFromDb);
+    }
+
+    async function getById(palhaco_id) {
+      const row = await supaGetByPalhacoId(palhaco_id);
+      return mapFromDb(row);
+    }
+
+    async function createPalhaco(data) {
+      return await supaCreatePalhaco({
+        palhaco_id: data.id,
+        name: data.name,
+        job_title: data.jobTitle,
+        bio: data.bio,
+        photo: data.photo,
+        instagram: data.instagram,
+        facebook: data.facebook,
+        twitter: data.twitter,
+        linkedin: data.linkedin,
+        website: data.website,
+        custom_links: data.customLinks || [],
+        color1: data.color1,
+        color2: data.color2,
+        additional_images: data.additionalImages || [],
+        section_order: data.sectionOrder || ['bio', 'social', 'images', 'links']
+      })
+    }
+
+    async function updatePalhaco(key, data) {
+      const updates = {
+        name: data.name,
+        job_title: data.jobTitle,
+        bio: data.bio,
+        photo: data.photo,
+        instagram: data.instagram,
+        facebook: data.facebook,
+        twitter: data.twitter,
+        linkedin: data.linkedin,
+        website: data.website,
+        custom_links: data.customLinks || [],
+        color1: data.color1,
+        color2: data.color2,
+        additional_images: data.additionalImages || [],
+        section_order: data.sectionOrder || ['bio', 'social', 'images', 'links']
+      }
+      return await supaUpdatePalhaco(key, updates)
+    }
+
+    async function delPalhaco(key) {
+      return await supaDeletePalhaco(key)
+    }
+
+    // --- Helper para formatar links sociais ---
     function formatLink(prefix, username) {
       if (!username) return "";
       username = username.trim();
-      // se o usuário já colocou um link completo, mantém como está
       if (username.startsWith("http")) return username;
-      // remove @ inicial caso exista
       return `${prefix}${username.replace(/^@/, "")}`;
     }
-
-    async function getPalhacos() {
-      const palhacos = [];
-      const q = query(collection(db, "palhacos"), orderBy("name", "asc"));
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => { let d = doc.data(); d.key = doc.id; palhacos.push(d); });
-      return palhacos;
-    }
-    async function getById(id) {
-      // --- MELHORIA: Usar 'where' para buscar diretamente no banco de dados ---
-      const palhacosRef = collection(db, "palhacos");
-      const q = query(palhacosRef, where("id", "==", id));
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        return null;
-      }
-      const doc = querySnapshot.docs[0];
-      // Retorna os dados do documento e a chave (ID do documento)
-      return { ...doc.data(), key: doc.id };
-    }
-    async function createPalhaco(data) { await addDoc(collection(db, "palhacos"), data); }
-    async function updatePalhaco(key, data) { const ref = doc(db, "palhacos", key); await updateDoc(ref, data); }
-    async function delPalhaco(key) { await deleteDoc(doc(db, "palhacos", key)); }
 
     async function renderIndvCard(id) {
       const dom = document.getElementById('main');
@@ -359,8 +413,12 @@
       </div>`;
       document.getElementById('loginform').onsubmit = async (e) => {
         e.preventDefault();
-        try { await signInWithEmailAndPassword(auth, luser.value, lsenha.value); }
-        catch { document.getElementById('loginError').innerText = "Login inválido!"; }
+        try {
+          await login(luser.value, lsenha.value);
+          renderAdmin();
+        } catch(err) {
+          document.getElementById('loginError').innerText = err.message || "Login inválido!";
+        }
       }
     }
 
@@ -440,9 +498,9 @@
       let data = { name:"", id:"", photo:"", jobTitle:"", bio:"", instagram:"", facebook:"", twitter:"", linkedin:"", website:"", customLinks:[], color1: "#E74C3C", color2: "#F39C12", additionalImages: ["","","",""], sectionOrder: ['bio', 'social', 'images', 'links'] };
       let isEdit = false;
       if (key) {
-        const ref = doc(db, "palhacos", key);
-        const snap = await getDoc(ref);
-        if (snap.exists()) { data = { ...data, ...snap.data() }; isEdit = true; } // Merge fetched data with defaults
+        const all = await getPalhacos();
+        const found = all.find((p) => p.key === key);
+        if (found) { data = { ...data, ...found }; isEdit = true; }
       }
       renderModalForm(data, isEdit, key);
     }
@@ -578,22 +636,20 @@
           if (!file) return;
           const statusEl = document.getElementById(`upload_status_${i}`);
           statusEl.textContent = 'Enviando...';
-          const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`; 
-          const storageRef = stRef(storage, 'palhacos_extra/' + fileName);
-          const uploadTask = uploadBytesResumable(storageRef, file);
-          uploadTask.on('state_changed', 
-            (snapshot) => {},
-            (error) => { statusEl.textContent = "Erro!"; },
-            async () => {
-              const url = await getDownloadURL(storageRef);
-              document.getElementById(`f_extra_photo_url_${i}`).value = url;
+          (async () => {
+            try {
+              const result = await uploadImage(file, 'images');
+              document.getElementById(`f_extra_photo_url_${i}`).value = result.publicUrl;
               const preview = document.getElementById(`extra_photo_preview_${i}`);
-              preview.src = url;
+              preview.src = result.publicUrl;
               preview.style.display = 'block';
               statusEl.textContent = 'Enviado!';
               setTimeout(() => statusEl.textContent = '', 2000);
+            } catch(err) {
+              statusEl.textContent = "Erro!";
+              console.error(err);
             }
-          );
+          })();
         };
       }
 
@@ -650,20 +706,16 @@
         const file = e.target.files[0];
         if (!file) return;
         document.getElementById('f_photo').value = "Enviando...";
-        const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, "")}`; 
-        const storageRef = stRef(storage, 'palhacos/' + fileName);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        uploadTask.on('state_changed', 
-          (snapshot) => {},
-          (error) => {formErr("Erro ao enviar imagem.");},
-          async () => {
-            const url = await getDownloadURL(storageRef);
-            document.getElementById('f_photo').value = url;
-            const preview = document.getElementById('photo-preview');
-            preview.src = url;
-            preview.style.display = 'block';
-          }
-        );
+        try {
+          const result = await uploadImage(file, 'images');
+          document.getElementById('f_photo').value = result.publicUrl;
+          const preview = document.getElementById('photo-preview');
+          preview.src = result.publicUrl;
+          preview.style.display = 'block';
+        } catch(err) {
+          formErr("Erro ao enviar imagem.");
+          console.error(err);
+        }
       } 
       document.getElementById('f_photo').oninput = function(){
         const preview = document.getElementById('photo-preview');
@@ -705,8 +757,12 @@
         if (isEdit) {
           const originalImages = data.additionalImages || [];
           const imagesToDelete = originalImages.filter(url => url && !additionalImages.includes(url));
-          
-          const deletePromises = imagesToDelete.map(url => deleteObject(stRef(storage, url)).catch(err => console.warn("Imagem a ser deletada não foi encontrada:", url)));
+
+          const deletePromises = imagesToDelete.map(async (url) => {
+            const extracted = extractStoragePath(url);
+            if (!extracted) return;
+            await deleteFile(extracted.path, extracted.bucket).catch(() => {});
+          });
           await Promise.all(deletePromises);
         }
         // --- Fim da melhoria ---
@@ -749,26 +805,7 @@
     async function excluirPalhaco(key) {
       if (confirm("Excluir este palhaço?")) {
         try {
-          // --- MELHORIA: Excluir imagens do Storage antes de apagar o documento ---
-          const palhacoRef = doc(db, "palhacos", key);
-          const palhacoSnap = await getDoc(palhacoRef);
-
-          if (palhacoSnap.exists()) {
-            const palhacoData = palhacoSnap.data();
-            const imagesToDelete = [];
-            if (palhacoData.photo) imagesToDelete.push(palhacoData.photo);
-            if (palhacoData.additionalImages) {
-              palhacoData.additionalImages.forEach(imgUrl => {
-                if (imgUrl) imagesToDelete.push(imgUrl);
-              });
-            }
-
-            // Deleta cada imagem do Storage
-            const deletePromises = imagesToDelete.map(url => deleteObject(stRef(storage, url)).catch(err => console.warn("Imagem não encontrada para deletar:", url)));
-            await Promise.all(deletePromises);
-          }
-
-          await delPalhaco(key); // Apaga o documento do Firestore
+          await delPalhaco(key);
           // Otimização: Em vez de recarregar tudo, apenas remove o card do DOM.
           const cardElement = document.querySelector(`.admin-card[data-key="${key}"]`);
           if (cardElement) {
@@ -785,15 +822,24 @@
         }
       }
     }
-    window.logout = function () { signOut(auth); }
-    function logout() { signOut(auth); }
+    async function logoutUser() { 
+      await logout();
+      renderLogin();
+    }
+    window.logout = logoutUser;
 
-    onAuthStateChanged(auth, (user) => {
+    // Verificar autenticação ao carregar
+    function checkAuth() {
       const idParam = getParamId();
+      const user = getCurrentUser();
+      
       if (idParam) renderIndvCard(idParam);
-      else if (user) renderAdmin();
+      else if (user && user.id) renderAdmin();
       else renderLogin();
-    });
+    }
+    
+    // Chamar checkAuth ao carregar a página
+    checkAuth();
 
     // Otimização: Delegação de Eventos
     document.body.addEventListener('click', (e) => {
@@ -806,7 +852,7 @@
       } else if (finalAction === 'add-new') {
         showEditModal();
       } else if (finalAction === 'logout') {
-        logout();
+        logoutUser();
       } else if (finalAction === 'add-custom-link') {
         addCustomLink();
       }
