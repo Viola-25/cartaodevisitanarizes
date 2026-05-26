@@ -151,7 +151,6 @@
       updatePalhaco as supaUpdatePalhaco,
       deletePalhaco as supaDeletePalhaco,
       uploadImage, deleteFile, extractStoragePath
-      , uploadPDF
     } from './supabase-client.js?v=20260512b';
     
     // Inicializar Supabase globalmente
@@ -290,15 +289,15 @@
         social: `<div class="soc-icons">${socIcons}</div>`,
         images: additionalImagesHTML,
         links: customLinksHTML,
-        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="#" data-pdf="${encodeURIComponent(palhaco.pdf)}" class="btn accent open-viewer">Abrir Trajetória (PDF)</a></div>` : ''
+        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>` : ''
       };
       let cardBodyHTML = '';
       sectionOrder.forEach(sectionId => {
         if (sections[sectionId]) cardBodyHTML += sections[sectionId];
       });
-      // Sempre mostrar link/visualizador do PDF se existir, independente da ordem das seções
+      // Sempre mostrar o link da trajetória se existir, independente da ordem das seções
       if (palhaco.pdf && palhaco.pdf.length) {
-        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="#" data-pdf="${encodeURIComponent(palhaco.pdf)}" class="btn accent open-viewer">Abrir Trajetória (PDF)</a></div>`;
+        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>`;
       }
 
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
@@ -535,12 +534,9 @@
           <input required id="f_photo" value="${data.photo||""}" placeholder="URL da foto" style="margin-top:10px;" />
           <img src="${data.photo||''}" id="photo-preview" style="width:70px; height:70px; border-radius:50%; background:#eee; margin-top:7px; object-fit:cover; ${data.photo ? '' : 'display:none;'}" onerror="this.style.display='none';" />
         </div>
-        <div class="form-grp"><label>Trajetória do Novato (PDF)</label>
-          <input type="file" id="f_pdf_file" accept="application/pdf" />
-          <input id="f_pdf" value="${data.pdf||""}" placeholder="URL do PDF (opcional)" style="margin-top:10px;" />
-          <div id="pdf-preview-container" style="margin-top:6px; ${data.pdf ? '' : 'display:none;'}">
-            <a id="pdf-preview" href="${data.pdf||''}" target="_blank">Abrir PDF</a>
-          </div>
+        <div class="form-grp"><label>Trajetória do Novato (link)</label>
+          <input id="f_pdf" value="${data.pdf||""}" placeholder="URL da trajetória (opcional)" />
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">Cole aqui o link da trajetória do novato.</div>
         </div>
         <div class="form-grp"><label>Cargo/Função</label>
           <input id="f_role" value="${data.jobTitle||""}" />
@@ -741,32 +737,6 @@
           photoInput.placeholder = previousPlaceholder;
         }
       } 
-      // Upload handler para PDF
-      document.getElementById('f_pdf_file').onchange = async function(e){
-        const file = e.target.files[0];
-        if (!file) return;
-        const pdfInput = document.getElementById('f_pdf');
-        const pdfPreviewContainer = document.getElementById('pdf-preview-container');
-        const pdfPreview = document.getElementById('pdf-preview');
-        const previousPlaceholder = pdfInput.placeholder;
-        pdfInput.placeholder = "Enviando PDF...";
-        pdfInput.disabled = true;
-        try {
-          const result = await uploadPDF(file, 'pdfs');
-          pdfInput.value = result.publicUrl;
-          if (pdfPreview) {
-            pdfPreview.href = result.publicUrl;
-            pdfPreview.textContent = 'Abrir PDF';
-          }
-          pdfPreviewContainer.style.display = 'block';
-        } catch(err) {
-          formErr(`Erro ao enviar PDF: ${err.message || 'verifique o bucket/policy no Supabase.'}`);
-          console.error(err);
-        } finally {
-          pdfInput.disabled = false;
-          pdfInput.placeholder = previousPlaceholder;
-        }
-      }
       document.getElementById('f_photo').oninput = function(){
         const preview = document.getElementById('photo-preview');
         const val = (this.value || '').trim();
@@ -826,7 +796,7 @@
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
-          pdf: f_pdf.value.trim(),
+          pdf: normalizeTrajectoryUrl(f_pdf.value),
           bio: f_bio.value,
           instagram: f_instagram.value,
           facebook: f_facebook.value,
@@ -839,6 +809,7 @@
           additionalImages, // Novas imagens adicionais
           sectionOrder // Nova ordem das seções
         };
+        if (f_pdf.value.trim() && !obj.pdf) { formErr('A trajetória precisa ser uma URL válida começando com http:// ou https://'); return; }
         submitBtn.disabled = true;
         submitBtn.innerText = "Salvando...";
         if (isEdit && key) {
@@ -853,6 +824,17 @@
       }
     }
     function formErr(msg){ document.getElementById('form-err').innerText = msg; }
+    function normalizeTrajectoryUrl(value) {
+      const url = (value || '').trim();
+      if (!url) return '';
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+        return parsed.toString();
+      } catch {
+        return null;
+      }
+    }
     function addCustomLink() {
       const c = document.createElement('div');
       c.className="custom-link-row";
@@ -925,22 +907,6 @@
     });
     document.getElementById('modal-bg').onclick = function (e) { if (e.target === this) closeModal(); }
 
-    // --- NOVO: Abrir visualizador embutido (modal) ---
-    function showViewerModal(encodedPdfUrl) {
-      // Abrir o PDF diretamente em nova aba (sem flipbook/modal)
-      const url = decodeURIComponent(encodedPdfUrl);
-      window.open(url, '_blank');
-    }
-
-    // Delegação para links que abrem o visualizador
-    document.body.addEventListener('click', (e) => {
-      const open = e.target.closest('.open-viewer');
-      if (!open) return;
-      e.preventDefault();
-      const pdf = open.dataset.pdf;
-      if (!pdf) return alert('PDF ausente');
-      showViewerModal(pdf);
-    });
   </script>
 </body>
 </html>

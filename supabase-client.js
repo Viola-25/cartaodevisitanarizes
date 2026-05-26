@@ -186,41 +186,6 @@ export async function uploadImage(file, bucket = 'images') {
   }
 }
 
-export async function uploadPDF(file, bucket = 'pdfs') {
-  const db = await initSupabase()
-
-  const { data: authData } = await db.auth.getUser()
-  if (!authData?.user) {
-    throw new Error('Voce precisa estar logado para enviar PDFs.')
-  }
-  
-  const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`
-  
-  const { data, error } = await db.storage
-    .from(bucket)
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type || 'application/pdf'
-    })
-  
-  if (error) {
-    console.error('Erro ao fazer upload de PDF:', error.message, error)
-    throw new Error(error.message || 'Falha no upload do PDF.')
-  }
-  
-  // Obter URL pública
-  const { data: urlData } = db.storage
-    .from(bucket)
-    .getPublicUrl(fileName)
-  
-  return {
-    success: true,
-    fileName: fileName,
-    publicUrl: urlData.publicUrl
-  }
-}
-
 export async function deleteFile(filePath, bucket = 'images') {
   const db = await initSupabase()
   
