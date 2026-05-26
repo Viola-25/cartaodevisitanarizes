@@ -168,7 +168,7 @@ await deletePalhaco(id)           // Deleta
 ### Storage
 ```javascript
 await uploadImage(file, bucket)   // Upload de imagem
-await uploadPDF(file, bucket)     // Upload de PDF
+// A trajetória agora é salva como URL no campo `pdf`
 await deleteFile(path, bucket)    // Deleta arquivo
 ```
 
