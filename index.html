@@ -522,6 +522,11 @@
       let html = `<form id="palhacoForm" autocomplete="off" data-key="${key || ''}">
         <button type="button" class="close-modal" data-action="close-modal">&times;</button>
         <div class="modal-title">${isEdit ? "Editar Palhaço" : "Adicionar Novo Palhaço"}</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px;">
+          <button type="button" class="btn secondary" data-action="import-json"><i class="fa fa-file-import"></i> Importar JSON de palhaço</button>
+          <button type="button" class="btn accent" data-action="download-json-example"><i class="fa fa-download"></i> Baixar JSON exemplo</button>
+          <input type="file" id="f_json_file" accept="application/json,.json" style="display:none;" />
+        </div>
         <div class="form-grp"><label>Nome do Palhaço *</label>
           <input required id="f_nome" value="${data.name||""}" />
         </div>
@@ -561,6 +566,97 @@
         <div id="form-err" style="color:#d00;margin-top:10px;"></div>
       </form>`;
       document.getElementById('modal-bg').innerHTML = `<div class="modal-box">${html}</div>`;
+
+      const applyImportedDataToForm = (importedData) => {
+        const imported = normalizeImportedPalhacoData(importedData);
+        const fieldMap = {
+          f_nome: imported.name,
+          f_id: imported.id,
+          f_photo: imported.photo,
+          f_pdf: imported.pdf,
+          f_role: imported.jobTitle,
+          f_bio: imported.bio,
+          f_instagram: imported.instagram,
+          f_facebook: imported.facebook,
+          f_twitter: imported.twitter,
+          f_linkedin: imported.linkedin,
+          f_website: imported.website,
+          f_color1: imported.color1,
+          f_color2: imported.color2
+        };
+
+        Object.entries(fieldMap).forEach(([id, value]) => {
+          const field = document.getElementById(id);
+          if (field) field.value = value ?? '';
+        });
+
+        const photoPreview = document.getElementById('photo-preview');
+        if (photoPreview) {
+          if (imported.photo) {
+            photoPreview.src = imported.photo;
+            photoPreview.style.display = 'block';
+          } else {
+            photoPreview.style.display = 'none';
+          }
+        }
+
+        const customLinksContainer = document.getElementById('custom-links');
+        if (customLinksContainer) {
+          customLinksContainer.innerHTML = '';
+          (imported.customLinks || []).forEach((lk) => {
+            const linkRow = document.createElement('div');
+            linkRow.className = 'custom-link-row';
+            linkRow.innerHTML = `
+              <input value="${lk.title || ''}" placeholder="Título do Link" />
+              <input value="${lk.url || ''}" placeholder="URL completa (https://...)" />
+              <button type="button" class="btn-icon btn-danger" onclick="this.parentElement.remove()">×</button>
+            `;
+            customLinksContainer.appendChild(linkRow);
+          });
+        }
+
+        const additionalPhotosContainer = document.getElementById('additional-photos-container');
+        if (additionalPhotosContainer) {
+          const rows = additionalPhotosContainer.querySelectorAll('.additional-photo-row');
+          rows.forEach((row, index) => {
+            const url = imported.additionalImages[index] || '';
+            const hiddenInput = row.querySelector('input[type="hidden"]');
+            const preview = row.querySelector('img');
+            if (hiddenInput) hiddenInput.value = url;
+            if (preview) {
+              preview.src = url;
+              preview.style.display = url ? 'block' : 'none';
+            }
+          });
+        }
+
+        const order = imported.sectionOrder && imported.sectionOrder.length ? imported.sectionOrder : ['bio', 'social', 'images', 'links'];
+        const reorderContainer = document.getElementById('reorderable-sections-container');
+        if (reorderContainer) {
+          order.forEach((sectionId) => {
+            const section = reorderContainer.querySelector(`.form-section[data-section-id="${sectionId}"]`);
+            if (section) reorderContainer.appendChild(section);
+          });
+        }
+      };
+
+      const jsonFileInput = document.getElementById('f_json_file');
+      if (jsonFileInput) {
+        jsonFileInput.onchange = async function(e) {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            applyImportedDataToForm(parsed);
+          } catch (err) {
+            formErr('Não foi possível ler o JSON enviado. Verifique se o arquivo está válido.');
+            console.error(err);
+          } finally {
+            e.target.value = '';
+          }
+        };
+      }
 
       // --- NOVO: Lógica para renderizar e reordenar seções do formulário ---
       const reorderableContainer = document.getElementById('reorderable-sections-container');
@@ -835,12 +931,73 @@
         return null;
       }
     }
+    function normalizeImportedPalhacoData(raw) {
+      const source = raw && typeof raw === 'object' ? raw : {};
+      const customLinks = Array.isArray(source.customLinks) ? source.customLinks : Array.isArray(source.links) ? source.links : [];
+      const additionalImages = Array.isArray(source.additionalImages) ? source.additionalImages : Array.isArray(source.images) ? source.images : [];
+      const sectionOrder = Array.isArray(source.sectionOrder) ? source.sectionOrder : Array.isArray(source.order) ? source.order : ['bio', 'social', 'images', 'links'];
+
+      return {
+        name: source.name ?? source.nome ?? '',
+        id: source.id ?? source.palhaco_id ?? '',
+        photo: source.photo ?? source.foto ?? source.image ?? '',
+        pdf: source.pdf ?? source.trajetoria ?? '',
+        jobTitle: source.jobTitle ?? source.cargo ?? source.role ?? '',
+        bio: source.bio ?? '',
+        instagram: source.instagram ?? '',
+        facebook: source.facebook ?? '',
+        twitter: source.twitter ?? '',
+        linkedin: source.linkedin ?? '',
+        website: source.website ?? '',
+        customLinks: customLinks.filter(Boolean),
+        color1: source.color1 ?? '#E74C3C',
+        color2: source.color2 ?? '#F39C12',
+        additionalImages: additionalImages.filter(Boolean),
+        sectionOrder: sectionOrder.filter(Boolean)
+      };
+    }
     function addCustomLink() {
       const c = document.createElement('div');
       c.className="custom-link-row";
       c.innerHTML = `<input placeholder="Título do Link" /> <input placeholder="URL completa (https://...)" /> <button type="button" class="btn-icon btn-danger" onclick="this.parentElement.remove()">×</button>`;
       document.getElementById('custom-links').appendChild(c);
     } 
+    function downloadJsonExample() {
+      const example = {
+        name: 'Palhaço Exemplo',
+        id: 'palhaco-exemplo',
+        photo: 'https://exemplo.com/foto.jpg',
+        pdf: 'https://exemplo.com/trajetoria.pdf',
+        jobTitle: 'Palhaço(a) / Doutor(a) da Alegria',
+        bio: 'Escreva aqui uma bio curta com a história do palhaço.',
+        instagram: 'palhaco.exemplo',
+        facebook: 'palhaco.exemplo',
+        twitter: 'palhaco_exemplo',
+        linkedin: 'palhaco-exemplo',
+        website: 'https://exemplo.com',
+        customLinks: [
+          { title: 'Instagram', url: 'https://instagram.com/palhaco.exemplo' },
+          { title: 'Site', url: 'https://exemplo.com' }
+        ],
+        color1: '#E74C3C',
+        color2: '#F39C12',
+        additionalImages: [
+          'https://exemplo.com/imagem-1.jpg',
+          'https://exemplo.com/imagem-2.jpg'
+        ],
+        sectionOrder: ['bio', 'social', 'images', 'links']
+      };
+
+      const blob = new Blob([JSON.stringify(example, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'palhaco-exemplo.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
     async function excluirPalhaco(key) {
       if (confirm("Excluir este palhaço?")) {
         try {
@@ -894,6 +1051,11 @@
         logoutUser();
       } else if (finalAction === 'add-custom-link') {
         addCustomLink();
+      } else if (finalAction === 'import-json') {
+        const jsonFileInput = document.getElementById('f_json_file');
+        if (jsonFileInput) jsonFileInput.click();
+      } else if (finalAction === 'download-json-example') {
+        downloadJsonExample();
       }
 
       const actionsContainer = target.closest('.card-actions');
