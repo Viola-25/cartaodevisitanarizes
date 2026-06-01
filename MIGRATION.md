@@ -168,7 +168,7 @@ await deletePalhaco(id)           // Deleta
 ### Storage
 ```javascript
 await uploadImage(file, bucket)   // Upload de imagem
-// A trajetória agora é salva como URL no campo `pdf`
+// A trajetória agora é salva como URL no campo `trajectory_url`
 await deleteFile(path, bucket)    // Deleta arquivo
 ```
 
@@ -195,7 +195,7 @@ await deleteFile(path, bucket)    // Deleta arquivo
 - ✅ `.env.local` está no `.gitignore` (não será versionado)
 - ✅ Credenciais públicas apenas (não inclua secret key)
 - ✅ RLS pode ser ativado para restringir acesso
-- ✅ PDFs são armazenados no Storage (acesso público)
+- ✅ Links de trajetória são armazenados como URL no banco
 
 ---
 
