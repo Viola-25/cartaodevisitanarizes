@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS palhacos (
   color2 VARCHAR(7) DEFAULT '#F39C12',
   additional_images JSONB DEFAULT '[]'::jsonb,
   section_order JSONB DEFAULT '["bio", "social", "images", "links"]'::jsonb,
+  trajectory_url TEXT,
   pdf TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -49,7 +50,8 @@ CREATE TRIGGER update_palhacos_updated_at BEFORE UPDATE ON palhacos
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
 
--- Garantir coluna `pdf` caso tabela já exista (idempotente)
+-- Garantir colunas de trajetória caso a tabela já exista (idempotente)
+ALTER TABLE IF EXISTS palhacos ADD COLUMN IF NOT EXISTS trajectory_url TEXT;
 ALTER TABLE IF EXISTS palhacos ADD COLUMN IF NOT EXISTS pdf TEXT;
 
 -- Remover tabela legado que gerava alerta de seguranca no Advisor (checa existência antes de usar)

@@ -164,7 +164,7 @@
         key: record.id,
         id: record.palhaco_id,
         name: record.name,
-        pdf: record.pdf,
+        trajectoryUrl: record.trajectory_url ?? record.pdf ?? '',
         jobTitle: record.job_title,
         bio: record.bio,
         photo: record.photo,
@@ -196,7 +196,7 @@
       return await supaCreatePalhaco({
         palhaco_id: data.id,
         name: data.name,
-        pdf: data.pdf || null,
+        trajectory_url: data.trajectoryUrl || null,
         job_title: data.jobTitle,
         bio: data.bio,
         photo: data.photo,
@@ -215,7 +215,7 @@
 
     async function updatePalhaco(key, data) {
       const updates = {
-        pdf: data.pdf || null,
+        trajectory_url: data.trajectoryUrl || null,
         name: data.name,
         job_title: data.jobTitle,
         bio: data.bio,
@@ -289,15 +289,15 @@
         social: `<div class="soc-icons">${socIcons}</div>`,
         images: additionalImagesHTML,
         links: customLinksHTML,
-        pdf: (palhaco.pdf && palhaco.pdf.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>` : ''
+        trajectoryUrl: (palhaco.trajectoryUrl && palhaco.trajectoryUrl.length) ? `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.trajectoryUrl}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>` : ''
       };
       let cardBodyHTML = '';
       sectionOrder.forEach(sectionId => {
         if (sections[sectionId]) cardBodyHTML += sections[sectionId];
       });
       // Sempre mostrar o link da trajetória se existir, independente da ordem das seções
-      if (palhaco.pdf && palhaco.pdf.length) {
-        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.pdf}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>`;
+      if (palhaco.trajectoryUrl && palhaco.trajectoryUrl.length) {
+        cardBodyHTML += `<div class="indv-pdf" style="margin-top:12px;"><a href="${palhaco.trajectoryUrl}" target="_blank" rel="noreferrer" class="btn accent">Abrir Trajetória</a></div>`;
       }
 
       // Define o estilo do background: usa as cores personalizadas se existirem, senão usa o padrão da classe CSS.
@@ -327,7 +327,7 @@
       </div>`;
       // --- NOVO: Inicializa o carrossel após renderizar o HTML ---
       initCarousel();
-      // PDF agora abre em nova aba a partir do botão estilizado
+      // O link da trajetória abre em nova aba a partir do botão estilizado
     }
 
     function initCarousel() {
@@ -540,8 +540,8 @@
           <img src="${data.photo||''}" id="photo-preview" style="width:70px; height:70px; border-radius:50%; background:#eee; margin-top:7px; object-fit:cover; ${data.photo ? '' : 'display:none;'}" onerror="this.style.display='none';" />
         </div>
         <div class="form-grp"><label>Trajetória do Novato (link)</label>
-          <input id="f_pdf" value="${data.pdf||""}" placeholder="URL da trajetória (opcional)" />
-          <div style="font-size:0.9em;color:#888;margin-top:3px;">Cole aqui o link da trajetória do novato.</div>
+          <input id="f_pdf" value="${data.trajectoryUrl||""}" placeholder="URL do scrollytelling (opcional)" />
+          <div style="font-size:0.9em;color:#888;margin-top:3px;">Cole aqui o link do scrollytelling da trajetória do novato.</div>
         </div>
         <div class="form-grp"><label>Cargo/Função</label>
           <input id="f_role" value="${data.jobTitle||""}" />
@@ -573,7 +573,7 @@
           f_nome: imported.name,
           f_id: imported.id,
           f_photo: imported.photo,
-          f_pdf: imported.pdf,
+          f_pdf: imported.trajectoryUrl,
           f_role: imported.jobTitle,
           f_bio: imported.bio,
           f_instagram: imported.instagram,
@@ -892,7 +892,7 @@
         let obj = {
           name, id, photo,
           jobTitle: f_role.value,
-          pdf: normalizeTrajectoryUrl(f_pdf.value),
+          trajectoryUrl: normalizeTrajectoryUrl(f_pdf.value),
           bio: f_bio.value,
           instagram: f_instagram.value,
           facebook: f_facebook.value,
@@ -905,7 +905,7 @@
           additionalImages, // Novas imagens adicionais
           sectionOrder // Nova ordem das seções
         };
-        if (f_pdf.value.trim() && !obj.pdf) { formErr('A trajetória precisa ser uma URL válida começando com http:// ou https://'); return; }
+        if (f_pdf.value.trim() && !obj.trajectoryUrl) { formErr('A trajetória precisa ser uma URL válida começando com http:// ou https://'); return; }
         submitBtn.disabled = true;
         submitBtn.innerText = "Salvando...";
         if (isEdit && key) {
@@ -941,7 +941,7 @@
         name: source.name ?? source.nome ?? '',
         id: source.id ?? source.palhaco_id ?? '',
         photo: source.photo ?? source.foto ?? source.image ?? '',
-        pdf: source.pdf ?? source.trajetoria ?? '',
+        trajectoryUrl: source.trajectoryUrl ?? source.trajectory_url ?? source.pdf ?? source.trajetoria ?? '',
         jobTitle: source.jobTitle ?? source.cargo ?? source.role ?? '',
         bio: source.bio ?? '',
         instagram: source.instagram ?? '',
@@ -967,7 +967,7 @@
         name: 'Palhaço Exemplo',
         id: 'palhaco-exemplo',
         photo: 'https://exemplo.com/foto.jpg',
-        pdf: 'https://exemplo.com/trajetoria.pdf',
+        trajectoryUrl: 'https://exemplo.com/scrollytelling',
         jobTitle: 'Palhaço(a) / Doutor(a) da Alegria',
         bio: 'Escreva aqui uma bio curta com a história do palhaço.',
         instagram: 'palhaco.exemplo',

@@ -7,7 +7,7 @@ Como usar
 
 Notas
 
-- A trajetória agora é salva como URL no campo de trajetória do novato.
+- A trajetória agora é salva como URL no campo de trajetória do novato, em `trajectory_url` no banco.
 
 Arquivos relevantes
 
